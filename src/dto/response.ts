@@ -1,5 +1,6 @@
+import { isJSONRPCID } from '../id'
 import type { JSONRPCID } from '../types'
-import { JSONRPCError } from './errors'
+import { JSONRPCErrorInterface, isJSONRPCError } from './errors'
 
 export class JSONRPCSuccessResponse {
     public jsonrpc = '2.0' as const
@@ -33,12 +34,12 @@ export class JSONRPCErrorResponse {
      * If there was an error in detecting the id in the Request object (e.g. Parse error/Invalid Request), it MUST be Null.
      */
     public id: JSONRPCID
-    public error: JSONRPCError
+    public error: JSONRPCErrorInterface
 
     public constructor(object: {
         jsonrpc?: '2.0'
         id: JSONRPCID
-        error: JSONRPCError
+        error: JSONRPCErrorInterface
     }) {
         this.id = object.id
         this.error = object.error
@@ -54,3 +55,20 @@ export class JSONRPCErrorResponse {
 }
 
 export type JSONRPCResponse = JSONRPCSuccessResponse | JSONRPCErrorResponse
+
+export function isJSONRPCResponse(x: unknown): x is JSONRPCResponse {
+    if (!x) {
+        return false
+    }
+    if (
+        x instanceof JSONRPCSuccessResponse ||
+        x instanceof JSONRPCErrorResponse
+    ) {
+        return true
+    }
+    if (Reflect.has(x, 'error') && !isJSONRPCError(Reflect.get(x, 'error'))) {
+        return false
+    }
+    return isJSONRPCID(Reflect.get(x, 'id'))
+    // there is no need to check `result`, we even allow it to be undefined
+}

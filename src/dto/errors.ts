@@ -1,25 +1,32 @@
 /**
  * The error codes from and including -32768 to -32000 are reserved for pre-defined errors. Any code within this range, but not defined explicitly below is reserved for future use. The error codes are nearly the same as those suggested for XML-RPC at the following url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
  */
-export class JSONRPCError {
+export interface JSONRPCErrorInterface {
     /**
      * A Number that indicates the error type that occurred.
      * This MUST be an integer.
      */
-    public code: number
+    code: number
     /**
      * A String providing a short description of the error.
      * The message SHOULD be limited to a concise single sentence.
      */
-    public message: string
+    message: string
     /**
      * A Primitive or Structured value that contains additional information about the error.
      * This may be omitted.
      * The value of this member is defined by the Server (e.g. detailed error information, nested errors etc.).
      */
+    data?: any
+}
+
+export class JSONRPCError extends Error implements JSONRPCErrorInterface {
+    public code: number
+    public message: string
     public data?: any
 
-    public constructor(object: JSONRPCError) {
+    public constructor(object: JSONRPCErrorInterface) {
+        super(object.message)
         this.code = object.code
         this.message = object.message
         this.data = object.data
@@ -32,9 +39,13 @@ export class JSONRPCError {
             data: this.data,
         })
     }
+
+    public toJSON() {
+        return this.toString()
+    }
 }
 
-export function isJSONRPCError(x: unknown): x is JSONRPCError {
+export function isJSONRPCError(x: unknown): x is JSONRPCErrorInterface {
     if (!x || typeof x !== 'object') {
         return false
     }

@@ -56,8 +56,12 @@ export class JSONRPCRequest extends JSONRPCNotification {
     }
 }
 
+/**
+ * WARN: this check if `x` is JSONRPCNotification or JSONRPCRequest
+ * to check if `x` is `JSONRPCRequest`, ONLY need to check `'id' in x`
+ */
 export function isJSONRPCRequest(
-    x: unknown,
+    x: unknown
 ): x is JSONRPCNotification | JSONRPCRequest {
     if (!x || typeof x !== 'object') {
         return false
