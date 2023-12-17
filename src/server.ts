@@ -1,22 +1,22 @@
 import {
-    JSONRPCMethodNotFoundError,
-    JSONRPCParseError,
+    isJSONRPCError,
     JSONRPCInternalError,
     JSONRPCInvalidRequestError,
-    isJSONRPCError,
-} from './dto/errors'
+    JSONRPCMethodNotFoundError,
+    JSONRPCParseError,
+} from './dto/errors.ts'
 import {
+    isJSONRPCRequest,
     JSONRPCNotification,
     JSONRPCRequest,
-    isJSONRPCRequest,
-} from './dto/request'
+} from './dto/request.ts'
 import {
     JSONRPCErrorResponse,
-    JSONRPCSuccessResponse,
     JSONRPCResponse,
-} from './dto/response'
-import { isJSONRPCID } from './id'
-import { type JSONRPCMethodSet } from './types'
+    JSONRPCSuccessResponse,
+} from './dto/response.ts'
+import { isJSONRPCID } from './id.ts'
+import { type JSONRPCMethodSet } from './types.ts'
 
 export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
     private methodSet: MethodSet
@@ -24,6 +24,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
     public getMethod(method: string) {
         const prop = this.methodSet[method]
         if (typeof prop === 'function') {
+            // deno-lint-ignore ban-types
             return prop.bind(this.methodSet) as Function
         }
 
@@ -53,12 +54,12 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
      * @noexcept
      */
     public async processAnyRequest(
-        jsonString: string
+        jsonString: string,
     ): Promise<undefined | JSONRPCResponse | JSONRPCResponse[]> {
         let jsonValue: unknown
         try {
             jsonValue = JSON.parse(jsonString)
-        } catch (e) {
+        } catch (_e) {
             return new JSONRPCErrorResponse({
                 id: null,
                 error: new JSONRPCParseError(),
@@ -81,7 +82,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
                 // just run each method in the event loop
                 // and immediately return nothing
                 Promise.allSettled(
-                    jsonValue.map((r) => this.processOneRequest(r))
+                    jsonValue.map((r) => this.processOneRequest(r)),
                 )
                 return
             }
@@ -89,7 +90,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
             const batchReturnValue: JSONRPCResponse[] = []
             for (const singleJsonValue of jsonValue) {
                 const returnValue = await this.processOneJsonValue(
-                    singleJsonValue
+                    singleJsonValue,
                 )
                 if (returnValue) {
                     batchReturnValue.push(returnValue)
@@ -112,11 +113,11 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
      * @noexcept
      */
     private async processOneJsonValue(
-        jsonValue: unknown
+        jsonValue: unknown,
     ): Promise<JSONRPCResponse | undefined> {
         if (isJSONRPCRequest(jsonValue)) {
             // request or notification
-            return this.processOneRequest(jsonValue)
+            return await this.processOneRequest(jsonValue)
         }
 
         // jsonValue is not a valid Request object
@@ -145,7 +146,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
      * @noexcept
      */
     private async processOneRequest(
-        request: JSONRPCNotification | JSONRPCRequest
+        request: JSONRPCNotification | JSONRPCRequest,
     ): Promise<JSONRPCResponse | undefined> {
         const { method, params } = request
         const fn = this.getMethod(method)
@@ -172,15 +173,16 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
                         // method in method set should throw JSONRPCError
                         isJSONRPCError(error)
                             ? error
-                            : // otherwise it will be treated as internal error
-                              new JSONRPCInternalError(),
+                            // otherwise it will be treated as internal error
+                            : new JSONRPCInternalError(),
                 })
             }
         }
 
-        // notification
         try {
             fn?.(params)
-        } catch {}
+        } catch {
+            // ignore as request is notification
+        }
     }
 }

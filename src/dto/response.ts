@@ -1,6 +1,5 @@
-import { isJSONRPCID } from '../id'
-import type { JSONRPCID } from '../types'
-import { JSONRPCErrorInterface, isJSONRPCError } from './errors'
+import { isJSONRPCID, type JSONRPCID } from '../id.ts'
+import { isJSONRPCError, JSONRPCErrorInterface } from './errors.ts'
 
 export class JSONRPCSuccessResponse {
     public jsonrpc = '2.0' as const
@@ -8,11 +7,13 @@ export class JSONRPCSuccessResponse {
     /**
      * The value of this member is determined by the method invoked on the Server.
      */
+    // deno-lint-ignore no-explicit-any
     public result: NonNullable<any>
 
     public constructor(object: {
         jsonrpc?: '2.0'
         id: JSONRPCID
+        // deno-lint-ignore no-explicit-any
         result: any
     }) {
         this.id = object.id
@@ -66,7 +67,11 @@ export function isJSONRPCResponse(x: unknown): x is JSONRPCResponse {
     ) {
         return true
     }
-    if (Reflect.has(x, 'error') && !isJSONRPCError(Reflect.get(x, 'error'))) {
+    if (
+        Reflect.get(x, 'jsonrpc') !== '2.0' ||
+        (Reflect.has(x, 'error') &&
+            !isJSONRPCError(Reflect.get(x, 'error')))
+    ) {
         return false
     }
     return isJSONRPCID(Reflect.get(x, 'id'))

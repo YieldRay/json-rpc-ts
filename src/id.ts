@@ -1,4 +1,7 @@
-import type { JSONRPCID } from './types'
+export type JSONRPCID =
+    | string
+    | number // SHOULD NOT contain fractional parts
+    | null // unknown id
 
 export function* selfAddIdGenerator() {
     let count = 0
@@ -15,7 +18,7 @@ export type IDGenerator = Iterator<JSONRPCID> | (() => JSONRPCID)
 
 export function getIDFromGenerator(g: IDGenerator): JSONRPCID {
     if (Symbol.iterator in g) {
-        return (g as Iterator<JSONRPCID>).next()[0]
+        return (g as Iterator<JSONRPCID>).next().value
     } else {
         return (g as () => JSONRPCID)()
     }

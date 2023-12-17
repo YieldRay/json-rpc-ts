@@ -6,11 +6,7 @@ export type ObjectValue = {
     [key: string]: PrimitiveValue | ObjectValue | ArrayValue
 }
 
-export type JSONRPCID =
-    | string
-    | number // SHOULD NOT contain fractional parts
-    | null // unknown id
-
 export interface JSONRPCMethodSet {
+    // deno-lint-ignore no-explicit-any
     [method: string]: (params?: any) => any
 }

@@ -1,0 +1,14 @@
+{
+    "imports": {
+        "std/": "https://deno.land/std@0.209.0/"
+    },
+    "fmt": {
+        "lineWidth": 80,
+        "semiColons": false,
+        "indentWidth": 4,
+        "singleQuote": true,
+        "proseWrap": "preserve",
+        "include": ["src/"],
+        "exclude": []
+    }
+}

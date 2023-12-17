@@ -1,5 +1,4 @@
-import type { JSONRPCID } from '../types'
-import { isJSONRPCID } from '../id'
+import { isJSONRPCID, type JSONRPCID } from '../id.ts'
 
 export class JSONRPCNotification {
     public jsonrpc = '2.0' as const
@@ -10,11 +9,13 @@ export class JSONRPCNotification {
     /**
      * A Structured value that holds the parameter values to be used during the invocation of the method. This member MAY be omitted.
      */
+    // deno-lint-ignore no-explicit-any
     public params?: any
 
     public constructor(object: {
         jsonrpc?: '2.0'
         method: string
+        // deno-lint-ignore no-explicit-any
         params?: any
     }) {
         this.method = object.method
@@ -39,6 +40,7 @@ export class JSONRPCRequest extends JSONRPCNotification {
     public constructor(object: {
         jsonrpc?: '2.0'
         method: string
+        // deno-lint-ignore no-explicit-any
         params?: any
         id: JSONRPCID
     }) {
@@ -61,7 +63,7 @@ export class JSONRPCRequest extends JSONRPCNotification {
  * to check if `x` is `JSONRPCRequest`, ONLY need to check `'id' in x`
  */
 export function isJSONRPCRequest(
-    x: unknown
+    x: unknown,
 ): x is JSONRPCNotification | JSONRPCRequest {
     if (!x || typeof x !== 'object') {
         return false
