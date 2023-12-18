@@ -1,3 +1,4 @@
+import type { JSONRPCValue, WithOptionalJSONRPCVersion } from '../types.ts'
 import { isJSONRPCID, type JSONRPCID } from '../id.ts'
 import { isJSONRPCError, JSONRPCErrorInterface } from './errors.ts'
 
@@ -7,15 +8,11 @@ export class JSONRPCSuccessResponse {
     /**
      * The value of this member is determined by the method invoked on the Server.
      */
-    // deno-lint-ignore no-explicit-any
-    public result: NonNullable<any>
+    public result: JSONRPCValue
 
-    public constructor(object: {
-        jsonrpc?: '2.0'
-        id: JSONRPCID
-        // deno-lint-ignore no-explicit-any
-        result: any
-    }) {
+    public constructor(
+        object: WithOptionalJSONRPCVersion<JSONRPCSuccessResponse>,
+    ) {
         this.id = object.id
         this.result = object.result
     }
@@ -37,11 +34,9 @@ export class JSONRPCErrorResponse {
     public id: JSONRPCID
     public error: JSONRPCErrorInterface
 
-    public constructor(object: {
-        jsonrpc?: '2.0'
-        id: JSONRPCID
-        error: JSONRPCErrorInterface
-    }) {
+    public constructor(
+        object: WithOptionalJSONRPCVersion<JSONRPCErrorResponse>,
+    ) {
         this.id = object.id
         this.error = object.error
     }
@@ -58,15 +53,10 @@ export class JSONRPCErrorResponse {
 export type JSONRPCResponse = JSONRPCSuccessResponse | JSONRPCErrorResponse
 
 export function isJSONRPCResponse(x: unknown): x is JSONRPCResponse {
-    if (!x) {
+    if (!x || typeof x !== 'object') {
         return false
     }
-    if (
-        x instanceof JSONRPCSuccessResponse ||
-        x instanceof JSONRPCErrorResponse
-    ) {
-        return true
-    }
+
     if (
         Reflect.get(x, 'jsonrpc') !== '2.0' ||
         (Reflect.has(x, 'error') &&
@@ -75,5 +65,4 @@ export function isJSONRPCResponse(x: unknown): x is JSONRPCResponse {
         return false
     }
     return isJSONRPCID(Reflect.get(x, 'id'))
-    // there is no need to check `result`, we even allow it to be undefined
 }

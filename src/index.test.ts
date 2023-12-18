@@ -1,10 +1,13 @@
-import { assertEquals } from 'std/assert/mod.ts'
+import { assertEquals, assertObjectMatch } from 'std/assert/mod.ts'
 import { JSONRPCClient, JSONRPCServer } from './index.ts'
 
 Deno.test('JSONRPCClient/JSONRPCServer', async () => {
     const methodSet = {
         upper: (str: string) => str.toUpperCase(),
-    } as const
+        lower: (str: string) => str.toLowerCase(),
+        plus: ([a, b]: [number, number]) => a + b,
+        minus: ([a, b]: [number, number]) => a - b,
+    }
 
     const server = new JSONRPCServer(methodSet)
 
@@ -14,10 +17,23 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
 
     assertEquals(await client.request('upper', 'hello'), 'HELLO')
 
+    assertEquals(await client.request('lower', 'WORLD'), 'world')
+
+    assertObjectMatch(
+        await client.request(
+            'plus',
+            { $: 'not an array, so it should throw' } as any,
+        ).catch((e) => e),
+        {
+            code: -32603,
+            message: 'Internal error',
+        },
+    )
+
     assertEquals(
         await client.batch(
             client.createRequest('upper', 'nihao'),
-            client.createNotifaction('upper'),
+            client.createNotifaction('upper', 'anything'),
             client.createRequest('upper', 'shijie'),
         ),
         [{

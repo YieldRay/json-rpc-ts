@@ -16,22 +16,51 @@ import {
     JSONRPCSuccessResponse,
 } from './dto/response.ts'
 import { isJSONRPCID } from './id.ts'
-import { type JSONRPCMethodSet } from './types.ts'
+import type { JSONRPCMethodSet, JSONRPCValue } from './types.ts'
 
+/**
+ * Provide a method set object to the constructor, it should contains
+ * a record with it's key is a string and value is a function
+ * that handle the rpc calls.
+ *
+ * See `JSONRPCMethodSet` for how method in method set should be.
+ */
 export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
     private methodSet: MethodSet
 
-    public getMethod(method: string) {
+    /**
+     * Override this function, to customize the behavior
+     * when method is not in methodSet.
+     *
+     * You can also use this method to handle dynamic
+     * method name if you like, but make sure you manully
+     * throw `JSONRPCMethodNotFoundError` when required
+     */
+    public methodNotFound(): JSONRPCValue {
+        throw new JSONRPCMethodNotFoundError()
+    }
+
+    /**
+     * Use this to get method in methodSet by method name
+     */
+    public getMethod<T extends keyof MethodSet>(
+        method: T,
+    ): MethodSet[T] | undefined {
         const prop = this.methodSet[method]
         if (typeof prop === 'function') {
-            // deno-lint-ignore ban-types
-            return prop.bind(this.methodSet) as Function
+            return prop.bind(this.methodSet) as MethodSet[T]
         }
 
         return undefined
     }
 
-    public setMethod<T extends keyof MethodSet>(method: T, fn: MethodSet[T]) {
+    /**
+     * Use this to replace or add more methods
+     */
+    public setMethod<T extends keyof MethodSet>(
+        method: T,
+        fn: MethodSet[T],
+    ): void {
         Reflect.set(this.methodSet, method, fn)
     }
 
@@ -40,7 +69,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
     }
 
     /**
-     * Given any string as input, return Response in json string
+     * Given any string as input, return response as json string
      * @noexcept
      */
     public async process(input: string): Promise<string> {
@@ -51,9 +80,10 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
 
     /**
      * Process request or batch request, return coresponding value
+     * @returns corresponding response object or array or some other thing
      * @noexcept
      */
-    public async processAnyRequest(
+    private async processAnyRequest(
         jsonString: string,
     ): Promise<undefined | JSONRPCResponse | JSONRPCResponse[]> {
         let jsonValue: unknown
@@ -110,6 +140,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
 
     /**
      * @param jsonValue the parse json value, can be any unknown javascript value
+     * @returns `JSONRPCResponse` if is request, or `undefined` if is notifaction
      * @noexcept
      */
     private async processOneJsonValue(
@@ -149,23 +180,23 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
         request: JSONRPCNotification | JSONRPCRequest,
     ): Promise<JSONRPCResponse | undefined> {
         const { method, params } = request
-        const fn = this.getMethod(method)
+
+        // load method from methodSet or use the methodNotFound() function as fallback
+        const methodFn = this.getMethod(method) ||
+            this.methodNotFound.bind(this)
 
         if ('id' in request) {
             // request
-            const id = request.id
-            if (!fn) {
-                return new JSONRPCErrorResponse({
-                    id,
-                    error: new JSONRPCMethodNotFoundError(),
-                })
-            }
+            const { id } = request
+
             try {
                 // note that here `result` can be anything, including undefined
                 // although undefined will make the property disappear in the json object
                 // we loosely accept it, so client should make additional check for this
-                const result = await fn(params)
-                return new JSONRPCSuccessResponse({ id, result })
+                return new JSONRPCSuccessResponse({
+                    id,
+                    result: await methodFn(params),
+                })
             } catch (error) {
                 return new JSONRPCErrorResponse({
                     id,
@@ -180,7 +211,7 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
         }
 
         try {
-            fn?.(params)
+            await methodFn?.(params)
         } catch {
             // ignore as request is notification
         }

@@ -1,5 +1,11 @@
+import type { JSONRPCValue, WithOptionalJSONRPCVersion } from '../types.ts'
 import { isJSONRPCID, type JSONRPCID } from '../id.ts'
 
+/**
+ * You should create this object via method from `JSONRPCClient`, it generate id for you.
+ *
+ * It's less likely that you need to create this object manually.
+ */
 export class JSONRPCNotification {
     public jsonrpc = '2.0' as const
     /**
@@ -9,15 +15,11 @@ export class JSONRPCNotification {
     /**
      * A Structured value that holds the parameter values to be used during the invocation of the method. This member MAY be omitted.
      */
-    // deno-lint-ignore no-explicit-any
-    public params?: any
+    public params?: JSONRPCValue
 
-    public constructor(object: {
-        jsonrpc?: '2.0'
-        method: string
-        // deno-lint-ignore no-explicit-any
-        params?: any
-    }) {
+    public constructor(
+        object: WithOptionalJSONRPCVersion<JSONRPCNotification>,
+    ) {
         this.method = object.method
         this.params = object.params
     }
@@ -31,19 +33,18 @@ export class JSONRPCNotification {
     }
 }
 
+/**
+ * You should create this object via method from `JSONRPCClient`, it generate id for you.
+ *
+ * It's less likely that you need to create this object manually.
+ */
 export class JSONRPCRequest extends JSONRPCNotification {
     /**
      * An identifier established by the Client that MUST contain a String, Number, or NULL value if included. If it is not included it is assumed to be a notification. The value SHOULD normally not be Null and Numbers SHOULD NOT contain fractional parts
      */
     public id: JSONRPCID
 
-    public constructor(object: {
-        jsonrpc?: '2.0'
-        method: string
-        // deno-lint-ignore no-explicit-any
-        params?: any
-        id: JSONRPCID
-    }) {
+    public constructor(object: WithOptionalJSONRPCVersion<JSONRPCRequest>) {
         super(object)
         this.id = object.id
     }
@@ -59,8 +60,9 @@ export class JSONRPCRequest extends JSONRPCNotification {
 }
 
 /**
- * WARN: this check if `x` is JSONRPCNotification or JSONRPCRequest
- * to check if `x` is `JSONRPCRequest`, ONLY need to check `'id' in x`
+ * WARN: this check if `x` is `JSONRPCNotification` or `JSONRPCRequest`
+ *
+ * To check if `x` is `JSONRPCRequest`, ONLY need to check `'id' in x`
  */
 export function isJSONRPCRequest(
     x: unknown,
@@ -68,9 +70,7 @@ export function isJSONRPCRequest(
     if (!x || typeof x !== 'object') {
         return false
     }
-    if (x instanceof JSONRPCNotification) {
-        return true
-    } else if (
+    if (
         Reflect.get(x, 'jsonrpc') === '2.0' &&
         typeof Reflect.get(x, 'method') === 'string'
     ) {

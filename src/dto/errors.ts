@@ -1,5 +1,4 @@
-// deno-lint-ignore-file no-explicit-any
-import { isJSONRPCID } from '../id.ts'
+import type { JSONRPCValue } from '../types.ts'
 /**
  * The error codes from and including -32768 to -32000 are reserved for pre-defined errors. Any code within this range, but not defined explicitly below is reserved for future use. The error codes are nearly the same as those suggested for XML-RPC at the following url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
  */
@@ -19,13 +18,13 @@ export interface JSONRPCErrorInterface {
      * This may be omitted.
      * The value of this member is defined by the Server (e.g. detailed error information, nested errors etc.).
      */
-    data?: any
+    data?: JSONRPCValue
 }
 
 export class JSONRPCError extends Error implements JSONRPCErrorInterface {
     public code: number
     public message: string
-    public data?: any
+    public data?: JSONRPCValue
 
     public constructor(object: JSONRPCErrorInterface) {
         super(object.message)
@@ -33,31 +32,20 @@ export class JSONRPCError extends Error implements JSONRPCErrorInterface {
         this.message = object.message
         this.data = object.data
     }
-
-    public toString() {
-        return JSON.stringify({
-            code: this.code,
-            message: this.message,
-            data: this.data,
-        })
-    }
-
-    public toJSON() {
-        return this.toString()
-    }
 }
 
+/**
+ * This ONLY check if `x` is `JSONRPCErrorInterface`
+ *
+ * Because it'a shared method between client and server, but `JSONRPCError` is server side only
+ */
 export function isJSONRPCError(x: unknown): x is JSONRPCErrorInterface {
     if (!x || typeof x !== 'object') {
         return false
     }
-    if (x instanceof JSONRPCError) {
-        return true
-    }
     if (
         typeof Reflect.get(x, 'code') === 'number' &&
-        typeof Reflect.get(x, 'message') === 'string' &&
-        isJSONRPCID(Reflect.get(x, 'id'))
+        typeof Reflect.get(x, 'message') === 'string'
     ) {
         return true
     }
@@ -66,7 +54,7 @@ export function isJSONRPCError(x: unknown): x is JSONRPCErrorInterface {
 }
 
 export class JSONRPCParseError extends JSONRPCError {
-    constructor(data?: any) {
+    constructor(data?: JSONRPCValue) {
         super({
             code: -32700,
             message: 'Parse error',
@@ -76,7 +64,7 @@ export class JSONRPCParseError extends JSONRPCError {
 }
 
 export class JSONRPCInvalidRequestError extends JSONRPCError {
-    constructor(data?: any) {
+    constructor(data?: JSONRPCValue) {
         super({
             code: -32600,
             message: 'Invalid Request',
@@ -86,7 +74,7 @@ export class JSONRPCInvalidRequestError extends JSONRPCError {
 }
 
 export class JSONRPCMethodNotFoundError extends JSONRPCError {
-    constructor(data?: any) {
+    constructor(data?: JSONRPCValue) {
         super({
             code: -32601,
             message: 'Method not found',
@@ -96,7 +84,7 @@ export class JSONRPCMethodNotFoundError extends JSONRPCError {
 }
 
 export class JSONRPCInvalidParamsError extends JSONRPCError {
-    constructor(data?: any) {
+    constructor(data?: JSONRPCValue) {
         super({
             code: -32602,
             message: 'Invalid params',
@@ -106,7 +94,7 @@ export class JSONRPCInvalidParamsError extends JSONRPCError {
 }
 
 export class JSONRPCInternalError extends JSONRPCError {
-    constructor(data?: any) {
+    constructor(data?: JSONRPCValue) {
         super({
             code: -32603,
             message: 'Internal error',

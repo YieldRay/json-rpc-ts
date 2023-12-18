@@ -1,4 +1,4 @@
-import { type JSONRPCMethodSet } from './types.ts'
+import type { JSONRPCMethodSet, JSONRPCSettledResult } from './types.ts'
 import { JSONRPCNotification, JSONRPCRequest } from './dto/request.ts'
 import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'
 import { isJSONRPCResponse, JSONRPCResponse } from './dto/response.ts'
@@ -14,7 +14,7 @@ type JSONRPCAnyRequest =
     | Array<JSONRPCNotification | JSONRPCRequest>
 
 /**
- * the client cannot parse the server response
+ * The client cannot parse the server response
  */
 export class JSONRPCClientParseError extends Error {
     name = 'JSONRPCClientParseError'
@@ -26,7 +26,7 @@ export class JSONRPCClientParseError extends Error {
 }
 
 /**
- * just wrap the JSON.parse function
+ * Just wrap the JSON.parse function, with potential `JSONRPCClientParseError`
  */
 function parseJSON(
     text: string,
@@ -42,13 +42,22 @@ function parseJSON(
     }
 }
 
+/**
+ * Provide a external `processor` function to the constructor,
+ * it should accept a string (json encoded from one or more json rpc request)
+ * and your customized code should send this string to a json rpc server
+ * for any response represented as **string**
+ *
+ * The constructor optionally accept a customized id generator, otherwise it use a
+ * self added number
+ */
 export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
     /**
      * MUST be an infinite iterator
      */
     private idGenerator: IDGenerator
     /**
-     * the extern function to request the server for response
+     * The extern function to request the server for response
      */
     private processor: (input: string) => Promise<string>
 
@@ -84,19 +93,9 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         return notification
     }
 
-    private processOneJsonValue(
-        jsonValue: unknown,
-        associatedRequest: JSONRPCAnyRequest,
-    ): JSONRPCResponse {
-        if (!isJSONRPCResponse(jsonValue)) {
-            throw new JSONRPCClientParseError(
-                `The server sent an incorrect response object`,
-                associatedRequest,
-            )
-        }
-        return jsonValue
-    }
-
+    /**
+     * Send `JSONRPCRequest` to server, returns `JSONRPCValue` or throw `JSONRPCErrorInterface` (or `JSONRPCClientParseError`)
+     */
     async request<T extends keyof MethodSet>(
         method: T extends string ? T : never,
         params?: Parameters<MethodSet[T]>[0],
@@ -105,15 +104,29 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         // responsed json string
         const jsonString = await this.processor(JSON.stringify(request))
         const jsonValue = parseJSON(jsonString, request)
+
         // parsed response
-        const response = this.processOneJsonValue(jsonValue, request)
+        if (!isJSONRPCResponse(jsonValue)) {
+            throw new JSONRPCClientParseError(
+                `The server sent an incorrect response object`,
+                request,
+            )
+        }
+        // now jsonValue become JSONRPCResponse
+        const response: JSONRPCResponse = jsonValue
+
         if ('error' in response) {
-            return Promise.reject(response.error)
+            throw response.error
         } else {
-            return response.result
+            // response.result is now JSONRPCValue
+            return response.result as ReturnType<MethodSet[T]>
         }
     }
 
+    /**
+     * Send `JSONRPCNotification` to server, no returns,
+     * only throws if your provided `processor` function throws
+     */
     async notify<T extends keyof MethodSet>(
         method: T extends string ? T : never,
         params?: Parameters<MethodSet[T]>[0],
@@ -123,13 +136,12 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
     }
 
     /**
-     * You should use the createRequest() or createNotifaction() method to
+     * You should use the `createRequest()` or `createNotifaction()` method to
      * create the requests array
      */
     async batch(
         ...requests: Array<JSONRPCRequest | JSONRPCNotification>
-        // deno-lint-ignore no-explicit-any
-    ): Promise<PromiseSettledResult<any>[] | PromiseSettledResult<any>> {
+    ): Promise<JSONRPCSettledResult | JSONRPCSettledResult[]> {
         // responsed json string
         const jsonString = await this.processor(JSON.stringify(requests))
         const requestCount = requests.filter((r) => 'id' in r).length
@@ -166,7 +178,7 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
 
         if (!jsonValue.every(isJSONRPCResponse)) {
             throw new JSONRPCClientParseError(
-                `The server returned batch response contains invalid value`,
+                `The server returned batch response contains invalid one`,
                 requests,
             )
         }
