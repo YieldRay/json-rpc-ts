@@ -2,7 +2,7 @@
 
 [![docs](https://shield.deno.dev/deno/docs)](https://doc.deno.land/https://github.com/YieldRay/json-rpc-ts/raw/main/src/index.ts)
 
-A strictly typed json-rpc implemention, zero dependency, minimal abstraction, with simple api
+A strictly typed json-rpc(2.0) implemention, zero dependency, minimal abstraction, with simple api
 
 > Specification <https://www.jsonrpc.org/specification>
 
@@ -36,4 +36,15 @@ assertEquals(
         },
     ],
 )
+```
+
+```ts
+const client = new JSONRPCClient((json) =>
+    fetch('http://localhost:6800/jsonrpc', {
+        method: 'POST',
+        body: json,
+    }).then((res) => res.text())
+)
+
+const aria2cMethods = await client.request('system.listMethods')
 ```

@@ -137,7 +137,25 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
 
     /**
      * You should use the `createRequest()` or `createNotifaction()` method to
-     * create the requests array
+     * create the requests array.
+     *
+     * Throws `JSONRPCClientParseError` if server response cannot be parsed,
+     * note that it does not throws for any `JSONRPCErrorResponse`, in this 
+     * case it will be a single object: `{ status: 'rejected', reason: {...} }`
+     *
+     * Usually it returns be like (same as the `Promise.allSettled()` method):
+     * ```js
+     * [
+     *    { status: 'fulfilled', value: '...' },
+     *    {
+     *        status: 'rejected',
+     *        reason: {
+     *            code: -32601,
+     *            message: 'Method not found',
+     *        },
+     *    },
+     * ]
+     * ```
      */
     async batch(
         ...requests: Array<JSONRPCRequest | JSONRPCNotification>
@@ -185,8 +203,7 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
 
         const unorderedResponses: JSONRPCResponse[] = jsonValue
         let errorStartIndex = 0
-        // deno-lint-ignore no-explicit-any
-        const responses: PromiseSettledResult<any>[] = [] // ordered
+        const responses: JSONRPCSettledResult[] = [] // ordered
 
         for (const request of requests) {
             if (!('id' in request)) {
