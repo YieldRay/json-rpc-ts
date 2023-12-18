@@ -9,29 +9,31 @@ A strictly typed json-rpc implemention, zero dependency, minimal abstraction, wi
 ```ts
 const methodSet = {
     upper: (str: string) => str.toUpperCase(),
-} as const;
+} as const
 
-const server = new JSONRPCServer(methodSet);
+const server = new JSONRPCServer(methodSet)
 
-const client = new JSONRPCClient<typeof methodSet>((json) => server.process(json));
+const client = new JSONRPCClient<typeof methodSet>((json) =>
+    server.process(json)
+)
 
-assertEquals(await client.request("upper", "hello"), "HELLO");
+assertEquals(await client.request('upper', 'hello'), 'HELLO')
 
 assertEquals(
     await client.batch(
-        client.createRequest("upper", "nihao"),
-        client.createNotifaction("upper"),
-        client.createRequest("upper", "shijie")
+        client.createRequest('upper', 'nihao'),
+        client.createNotifaction('upper'),
+        client.createRequest('upper', 'shijie'),
     ),
     [
         {
-            status: "fulfilled",
-            value: "NIHAO",
+            status: 'fulfilled',
+            value: 'NIHAO',
         },
         {
-            status: "fulfilled",
-            value: "SHIJIE",
+            status: 'fulfilled',
+            value: 'SHIJIE',
         },
-    ]
-);
+    ],
+)
 ```

@@ -2,13 +2,16 @@
     "imports": {
         "std/": "https://deno.land/std@0.209.0/"
     },
+    "tasks": {
+        "docs": "deno doc --html --name=json-rpc-ts --output=./docs/ ./src/index.ts"
+    },
     "fmt": {
         "lineWidth": 80,
         "semiColons": false,
         "indentWidth": 4,
         "singleQuote": true,
         "proseWrap": "preserve",
-        "include": ["src/"],
+        "include": ["*"],
         "exclude": []
     }
 }

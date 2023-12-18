@@ -1,7 +1,5 @@
 import type { JSONRPCValue } from '../types.ts'
-/**
- * The error codes from and including -32768 to -32000 are reserved for pre-defined errors. Any code within this range, but not defined explicitly below is reserved for future use. The error codes are nearly the same as those suggested for XML-RPC at the following url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
- */
+
 export interface JSONRPCErrorInterface {
     /**
      * A Number that indicates the error type that occurred.
@@ -22,6 +20,9 @@ export interface JSONRPCErrorInterface {
 }
 
 export class JSONRPCError extends Error implements JSONRPCErrorInterface {
+    /**
+     * The error codes from and including -32768 to -32000 are reserved for pre-defined errors. Any code within this range, but not defined explicitly below is reserved for future use. The error codes are nearly the same as those suggested for XML-RPC at the following url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
+     */
     public code: number
     public message: string
     public data?: JSONRPCValue
