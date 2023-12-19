@@ -1,6 +1,6 @@
 # json-rpc-ts
 
-[![docs](https://shield.deno.dev/deno/docs)](https://doc.deno.land/https://github.com/YieldRay/json-rpc-ts/raw/main/src/index.ts)
+[![deno.land/x](https://shield.deno.dev/x/json_rpc_ts)](https://deno.land/x/json_rpc_ts)
 
 A strictly typed json-rpc(2.0) implemention, zero dependency, minimal abstraction, with simple api
 
