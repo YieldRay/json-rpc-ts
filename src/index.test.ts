@@ -30,7 +30,7 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
     assertObjectMatch(
         await client.request(
             'plus',
-            { $: 'not an array, so it should throw' } as any,
+            { error_test: 'not an array, so it should throw' } as any,
         ).catch((e) => e),
         {
             code: -32603,
@@ -38,11 +38,23 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
         },
     )
 
+    assertObjectMatch(
+        await client.request(
+            'no_such_method' as any,
+        ).catch((e) => e),
+        {
+            code: -32601,
+            message: 'Method not found',
+        },
+    )
+
     assertEquals(
         await client.batch(
             client.createRequest('upper', 'nihao'),
-            client.createNotifaction('upper', 'anything'),
+            client.createNotifaction('lower', 'anything'),
             client.createRequest('upper', 'shijie'),
+            client.createRequest('plus', [1, 2]),
+            client.createRequest('minus', [1, 2]),
         ),
         [{
             status: 'fulfilled',
@@ -50,6 +62,12 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
         }, {
             status: 'fulfilled',
             value: 'SHIJIE',
+        }, {
+            status: 'fulfilled',
+            value: 3,
+        }, {
+            status: 'fulfilled',
+            value: -1,
         }],
     )
 })
@@ -61,6 +79,14 @@ Deno.test({
         .state !==
         'granted',
     fn: async () => {
+        const ok = await fetch('http://localhost:6800/jsonrpc', {
+            signal: AbortSignal.timeout(500),
+        }).then((res) => res.ok).catch(() => false)
+        if (!ok) {
+            // skip when no aria2c jsonrpc is running
+            return
+        }
+
         const client = new JSONRPCClient((json) =>
             fetch('http://localhost:6800/jsonrpc', {
                 method: 'POST',
@@ -79,5 +105,48 @@ Deno.test({
 
         assertObjectMatch(r1, { status: 'fulfilled' })
         assertObjectMatch(r2, { status: 'fulfilled' })
+    },
+})
+
+Deno.test({
+    name: 'JSONRPCServer/Deno.serve()',
+    ignore: Deno.permissions.querySync({ name: 'net' })
+        .state !==
+        'granted',
+    fn: async () => {
+        const server = new JSONRPCServer()
+
+        server.setMethod('trim', (str: string) => str.trim())
+        server.setMethod('trimStart', (str: string) => str.trimStart())
+        server.setMethod('trimEnd', (str: string) => str.trimEnd())
+
+        const httpServer = Deno.serve(
+            { port: 8888, onListen() {} },
+            async (request) => {
+                const url = new URL(request.url)
+                if (url.pathname === '/jsonrpc') {
+                    return new Response(
+                        await server.process(await request.text()),
+                        {
+                            headers: { 'content-type': 'application/json' },
+                        },
+                    )
+                }
+                return new Response('404', { status: 404 })
+            },
+        )
+
+        const client = new JSONRPCClient((json) =>
+            fetch('http://localhost:8888/jsonrpc', {
+                method: 'POST',
+                body: json,
+            }).then((res) => res.text())
+        )
+
+        assertEquals(await client.request('trim', ' trim '), 'trim')
+        assertEquals(await client.request('trimStart', ' trim '), 'trim ')
+        assertEquals(await client.request('trimEnd', ' trim '), ' trim')
+
+        await httpServer.shutdown()
     },
 })

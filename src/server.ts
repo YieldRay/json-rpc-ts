@@ -25,8 +25,16 @@ import type { JSONRPCMethodSet, JSONRPCValue } from './types.ts'
  *
  * See `JSONRPCMethodSet` for how method in method set should be.
  */
-export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
+export class JSONRPCServer<
+    MethodSet extends JSONRPCMethodSet = JSONRPCMethodSet,
+> {
     private methodSet: MethodSet
+
+    constructor()
+    constructor(methodSet: MethodSet)
+    constructor(methodSet?: MethodSet) {
+        this.methodSet = methodSet || ({} as MethodSet)
+    }
 
     /**
      * Override this function, to customize the behavior
@@ -60,12 +68,9 @@ export class JSONRPCServer<MethodSet extends JSONRPCMethodSet> {
     public setMethod<T extends keyof MethodSet>(
         method: T,
         fn: MethodSet[T],
-    ): void {
+    ) {
         Reflect.set(this.methodSet, method, fn)
-    }
-
-    constructor(methodSet: MethodSet) {
-        this.methodSet = methodSet
+        return this
     }
 
     /**

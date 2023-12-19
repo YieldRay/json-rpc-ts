@@ -137,10 +137,10 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
 
     /**
      * You should use the `createRequest()` or `createNotifaction()` method to
-     * create the requests array.
+     * create the requests array. Response order is always matched by id.
      *
      * Throws `JSONRPCClientParseError` if server response cannot be parsed,
-     * note that it does not throws for any `JSONRPCErrorResponse`, in this 
+     * note that it does not throws for any `JSONRPCErrorResponse`, in this
      * case it will be a single object: `{ status: 'rejected', reason: {...} }`
      *
      * Usually it returns be like (same as the `Promise.allSettled()` method):

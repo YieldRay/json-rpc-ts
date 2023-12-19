@@ -9,7 +9,10 @@ A strictly typed json-rpc(2.0) implemention, zero dependency, minimal abstractio
 ```ts
 const methodSet = {
     upper: (str: string) => str.toUpperCase(),
-} as const
+    lower: (str: string) => str.toLowerCase(),
+    plus: ([a, b]: [number, number]) => a + b,
+    minus: ([a, b]: [number, number]) => a - b,
+}
 
 const server = new JSONRPCServer(methodSet)
 
@@ -22,8 +25,10 @@ assertEquals(await client.request('upper', 'hello'), 'HELLO')
 assertEquals(
     await client.batch(
         client.createRequest('upper', 'nihao'),
+        // notifaction does not have response, even when response errors
         client.createNotifaction('upper'),
         client.createRequest('upper', 'shijie'),
+        client.createRequest('plus', [1, 1]),
     ),
     [
         {
@@ -34,9 +39,15 @@ assertEquals(
             status: 'fulfilled',
             value: 'SHIJIE',
         },
+        {
+            status: 'fulfilled',
+            value: 2,
+        },
     ],
 )
 ```
+
+Example to use the client
 
 ```ts
 const client = new JSONRPCClient((json) =>
@@ -47,4 +58,30 @@ const client = new JSONRPCClient((json) =>
 )
 
 const aria2cMethods = await client.request('system.listMethods')
+```
+
+Example to use the server
+
+```ts
+const server = new JSONRPCServer()
+
+server.setMethod('trim', (str: string) => str.trim())
+server.setMethod('trimStart', (str: string) => str.trimStart())
+server.setMethod('trimEnd', (str: string) => str.trimEnd())
+
+const httpServer = Deno.serve(
+    async (request) => {
+        const url = new URL(request.url)
+        if (url.pathname === '/jsonrpc') {
+            return new Response(
+                // server.process() accept string and returns Promise<string>
+                await server.process(await request.text()),
+                {
+                    headers: { 'content-type': 'application/json' },
+                },
+            )
+        }
+        return new Response('404', { status: 404 })
+    },
+)
 ```
