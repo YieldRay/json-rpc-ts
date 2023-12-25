@@ -28,4 +28,9 @@ Deno.test('isJSONRPCResponse', () => {
         }),
         false,
     )
+
+    assertEquals(
+        isJSONRPCResponse(null),
+        false,
+    )
 })

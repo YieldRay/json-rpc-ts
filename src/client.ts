@@ -2,6 +2,7 @@ import type { JSONRPCMethodSet, JSONRPCSettledResult } from './types.ts'
 import { JSONRPCNotification, JSONRPCRequest } from './dto/request.ts'
 import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'
 import { isJSONRPCResponse, JSONRPCResponse } from './dto/response.ts'
+import { JSONRPCError } from './dto/errors.ts'
 import {
     getIDFromGenerator,
     type IDGenerator,
@@ -17,7 +18,7 @@ type JSONRPCAnyRequest =
  * The client cannot parse the server response
  */
 export class JSONRPCClientParseError extends Error {
-    name = 'JSONRPCClientParseError'
+    override name = 'JSONRPCClientParseError'
     request: JSONRPCAnyRequest
     constructor(message: string, request: JSONRPCAnyRequest) {
         super(message)
@@ -51,7 +52,9 @@ function parseJSON(
  * The constructor optionally accept a customized id generator, otherwise it use a
  * self added number
  */
-export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
+export class JSONRPCClient<
+    MethodSet extends JSONRPCMethodSet = JSONRPCMethodSet,
+> {
     /**
      * MUST be an infinite iterator
      */
@@ -59,10 +62,10 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
     /**
      * The extern function to request the server for response
      */
-    private processor: (input: string) => Promise<string>
+    private processor: (input: string) => string | Promise<string>
 
     constructor(
-        processor: (input: string) => Promise<string>,
+        processor: (input: string) => string | Promise<string>,
         idGenerator?: IDGenerator,
     ) {
         this.processor = processor
@@ -82,7 +85,7 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         return request
     }
 
-    public createNotifaction<T extends keyof MethodSet>(
+    public createNotification<T extends keyof MethodSet>(
         method: T extends string ? T : never,
         params?: Parameters<MethodSet[T]>[0],
     ): JSONRPCNotification {
@@ -101,7 +104,7 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         params?: Parameters<MethodSet[T]>[0],
     ): Promise<ReturnType<MethodSet[T]>> {
         const request = this.createRequest(method, params)
-        // responsed json string
+        // responded json string
         const jsonString = await this.processor(JSON.stringify(request))
         const jsonValue = parseJSON(jsonString, request)
 
@@ -118,6 +121,14 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         if ('error' in response) {
             throw response.error
         } else {
+            if (request.id !== response.id) {
+                // according the spec, response id MUST as same as the request id
+                throw new JSONRPCClientParseError(
+                    `The server sent an valid response but id is not matched`,
+                    request,
+                )
+            }
+
             // response.result is now JSONRPCValue
             return response.result as ReturnType<MethodSet[T]>
         }
@@ -131,12 +142,12 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
         method: T extends string ? T : never,
         params?: Parameters<MethodSet[T]>[0],
     ): Promise<void> {
-        const notification = this.createNotifaction(method, params)
+        const notification = this.createNotification(method, params)
         await this.processor(JSON.stringify(notification))
     }
 
     /**
-     * You should use the `createRequest()` or `createNotifaction()` method to
+     * You should use the `createRequest()` or `createNotification()` method to
      * create the requests array. Response order is always matched by id.
      *
      * Throws `JSONRPCClientParseError` if server response cannot be parsed,
@@ -156,15 +167,18 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
      *    },
      * ]
      * ```
+     * @throws `JSONRPCError` - when server return single JSONRPCErrorResponse
+     * @throws `JSONRPCClientParseError` - when server response cannot be parsed
      */
     async batch(
         ...requests: Array<JSONRPCRequest | JSONRPCNotification>
-    ): Promise<JSONRPCSettledResult | JSONRPCSettledResult[]> {
-        // responsed json string
+    ): Promise<JSONRPCSettledResult[]> {
+        // responded json string
         const jsonString = await this.processor(JSON.stringify(requests))
         const requestCount = requests.filter((r) => 'id' in r).length
         if (requestCount === 0) {
             // all the requests are notification
+            // note that the server should return nothing, so we ignore any response
             return []
         }
         // parsed response
@@ -172,12 +186,9 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
 
         if (!Array.isArray(jsonValue)) {
             if (isJSONRPCResponse(jsonValue) && 'error' in jsonValue) {
-                // If the batch rpc call itself fails to be recognized as an valid JSON or as an Array with at least one value,
+                // if the batch rpc call itself fails to be recognized as an valid JSON or as an Array with at least one value,
                 // the response from the Server MUST be a single Response object.
-                return {
-                    status: 'rejected',
-                    reason: jsonValue.error,
-                }
+                throw new JSONRPCError(jsonValue.error)
             }
 
             // requests contains request, so response must be an array
@@ -225,7 +236,7 @@ export class JSONRPCClient<MethodSet extends JSONRPCMethodSet> {
                         (response) =>
                             'error' in response && response.id === null,
                     )
-                // this implemention expect that all the JSONRPCErrorResponse are ordered
+                // this implementation expect that all the JSONRPCErrorResponse are ordered
                 responses.push({
                     status: 'rejected',
                     reason: (unorderedResponses[

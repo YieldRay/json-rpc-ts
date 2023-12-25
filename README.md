@@ -1,8 +1,9 @@
 # json-rpc-ts
 
 [![deno.land/x](https://shield.deno.dev/x/json_rpc_ts)](https://deno.land/x/json_rpc_ts)
+[![ci](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml)
 
-A strictly typed json-rpc(2.0) implemention, zero dependency, minimal abstraction, with simple api
+A strictly typed json-rpc(2.0) implementation, zero dependency, minimal abstraction, with simple api
 
 > Specification <https://www.jsonrpc.org/specification>
 
@@ -14,19 +15,29 @@ const methodSet = {
     minus: ([a, b]: [number, number]) => a - b,
 }
 
+// initialize all methods with the constructor
 const server = new JSONRPCServer(methodSet)
 
+// or add methods manually
+const server = new JSONRPCServer<typeof methodSet>()
+server.setMethod('upper', methodSet.upper)
+server.setMethod('lower', methodSet.lower)
+server.setMethod('plus', methodSet.plus)
+server.setMethod('minus', methodSet.minus)
+
+// (optional) provide a generic parameter to enable ts check
 const client = new JSONRPCClient<typeof methodSet>((json) =>
     server.process(json)
 )
 
+// request, Notification and batch are always async
 assertEquals(await client.request('upper', 'hello'), 'HELLO')
 
 assertEquals(
     await client.batch(
         client.createRequest('upper', 'nihao'),
-        // notifaction does not have response, even when response errors
-        client.createNotifaction('upper'),
+        // Notification does not have response, even when response errors
+        client.createNotification('upper'),
         client.createRequest('upper', 'shijie'),
         client.createRequest('plus', [1, 1]),
     ),
@@ -84,4 +95,14 @@ const httpServer = Deno.serve(
         return new Response('404', { status: 404 })
     },
 )
+```
+
+# build for JavaScript
+
+To use this library without typescript, you have to build it to javascript.
+
+```sh
+git clone https://github.com/YieldRay/json-rpc-ts.git
+cd json-rpc-ts
+esbuild --bundle src/index.ts --outdir=dist --format=esm
 ```

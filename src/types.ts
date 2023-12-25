@@ -22,11 +22,19 @@ export type ArrayValue = Array<JSONRPCValue>
  * Note that client is allowed to send no params, meaning that params can also be `undefined`
  */
 export interface JSONRPCMethodSet {
-    [method: string]: (
-        // deno-lint-ignore no-explicit-any
-        params: any, //! client may send any params to server
-    ) => Promise<JSONRPCValue> | JSONRPCValue
+    [method: string]: JSONRPCMethod
 }
+
+/**
+ * Represent any json rpc method, any detailed method should extend it
+ *
+ * Note that for a request, `params` MUST be `JSONRPCValue`,
+ * however here `params` is `any` (just for simplicity)
+ */
+export type JSONRPCMethod = (
+    // deno-lint-ignore no-explicit-any
+    params: any, //! client may send any params to server
+) => Promise<JSONRPCValue> | JSONRPCValue
 
 export type WithOptionalJSONRPCVersion<T extends object> =
     & Omit<T, 'jsonrpc'>

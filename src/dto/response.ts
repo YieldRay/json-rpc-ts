@@ -45,7 +45,11 @@ export class JSONRPCErrorResponse {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             id: this.id,
-            error: this.error,
+            error: {
+                code: this.error.code,
+                data: this.error.data,
+                message: this.error.message,
+            },
         })
     }
 }

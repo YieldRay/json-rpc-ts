@@ -24,6 +24,8 @@ import type { JSONRPCMethodSet, JSONRPCValue } from './types.ts'
  * that handle the rpc calls.
  *
  * See `JSONRPCMethodSet` for how method in method set should be.
+ *
+ * Note: avoid using `this` in method!
  */
 export class JSONRPCServer<
     MethodSet extends JSONRPCMethodSet = JSONRPCMethodSet,
@@ -41,7 +43,7 @@ export class JSONRPCServer<
      * when method is not in methodSet.
      *
      * You can also use this method to handle dynamic
-     * method name if you like, but make sure you manully
+     * method name if you like, but make sure you manually
      * throw `JSONRPCMethodNotFoundError` when required
      */
     public methodNotFound(): JSONRPCValue {
@@ -79,12 +81,17 @@ export class JSONRPCServer<
      */
     public async process(input: string): Promise<string> {
         const resp = await this.processAnyRequest(input)
-        const output = JSON.stringify(resp)
-        return output || ''
+        if (!resp) {
+            return ''
+        }
+        if (Array.isArray(resp)) {
+            return `[${resp.map((r) => r.toString()).join(',')}]`
+        }
+        return resp.toString()
     }
 
     /**
-     * Process request or batch request, return coresponding value
+     * Process request or batch request, return corresponding value
      * @returns corresponding response object or array or some other thing
      * @noexcept
      */
@@ -145,7 +152,7 @@ export class JSONRPCServer<
 
     /**
      * @param jsonValue the parse json value, can be any unknown javascript value
-     * @returns `JSONRPCResponse` if is request, or `undefined` if is notifaction
+     * @returns `JSONRPCResponse` if is request, or `undefined` if is Notification
      * @noexcept
      */
     private async processOneJsonValue(

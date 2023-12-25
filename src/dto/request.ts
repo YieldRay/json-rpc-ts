@@ -49,7 +49,7 @@ export class JSONRPCRequest extends JSONRPCNotification {
         this.id = object.id
     }
 
-    public toString() {
+    public override toString() {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             method: this.method,

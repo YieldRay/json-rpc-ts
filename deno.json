@@ -1,9 +1,20 @@
 {
+    "compilerOptions": {
+        "strict": true,
+        "useUnknownInCatchVariables": true,
+        "noImplicitOverride": true
+    },
     "imports": {
         "std/": "https://deno.land/std@0.209.0/"
     },
     "tasks": {
-        "docs": "deno doc --html --name=json-rpc-ts --output=./docs/ ./src/index.ts"
+        "lint": "deno lint",
+        "fmt": "deno fmt",
+        "docs": "deno doc --html --name=json-rpc-ts --output=./docs/ ./mod.ts",
+        "test": "deno test --parallel --coverage --trace-ops",
+        "cov:gen": "deno coverage coverage --lcov --output=cov.lcov",
+        "cov:view": "deno coverage --html coverage",
+        "cov:clean": "rm -rf ./coverage/ cov.lcov"
     },
     "fmt": {
         "lineWidth": 80,
@@ -11,7 +22,17 @@
         "indentWidth": 4,
         "singleQuote": true,
         "proseWrap": "preserve",
-        "include": ["*"],
-        "exclude": []
-    }
+        "include": [
+            "src",
+            ".github",
+            "deno.json",
+            "README.md",
+            "mod.ts"
+        ]
+    },
+    "exclude": [
+        ".git",
+        "docs",
+        "coverage"
+    ]
 }

@@ -1,13 +1,5 @@
-import {
-    assertEquals,
-    assertInstanceOf,
-    assertObjectMatch,
-} from 'std/assert/mod.ts'
-import {
-    JSONRPCClient,
-    JSONRPCFulfilledResult,
-    JSONRPCServer,
-} from './index.ts'
+import { assertEquals, assertObjectMatch } from 'std/assert/mod.ts'
+import { JSONRPCClient, JSONRPCServer } from './index.ts'
 
 Deno.test('JSONRPCClient/JSONRPCServer', async () => {
     const methodSet = {
@@ -24,12 +16,12 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
     )
 
     assertEquals(await client.request('upper', 'hello'), 'HELLO')
-
     assertEquals(await client.request('lower', 'WORLD'), 'world')
 
     assertObjectMatch(
         await client.request(
             'plus',
+            // deno-lint-ignore no-explicit-any
             { error_test: 'not an array, so it should throw' } as any,
         ).catch((e) => e),
         {
@@ -40,6 +32,7 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
 
     assertObjectMatch(
         await client.request(
+            // deno-lint-ignore no-explicit-any
             'no_such_method' as any,
         ).catch((e) => e),
         {
@@ -51,7 +44,7 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
     assertEquals(
         await client.batch(
             client.createRequest('upper', 'nihao'),
-            client.createNotifaction('lower', 'anything'),
+            client.createNotification('lower', 'anything'),
             client.createRequest('upper', 'shijie'),
             client.createRequest('plus', [1, 2]),
             client.createRequest('minus', [1, 2]),
@@ -70,42 +63,6 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
             value: -1,
         }],
     )
-})
-
-Deno.test({
-    name: 'JSONRPCClient/aria2',
-    // also need to run `aria2c --enable-rpc`
-    ignore: Deno.permissions.querySync({ name: 'net', host: 'localhost:6800' })
-        .state !==
-        'granted',
-    fn: async () => {
-        const ok = await fetch('http://localhost:6800/jsonrpc', {
-            signal: AbortSignal.timeout(500),
-        }).then((res) => res.ok).catch(() => false)
-        if (!ok) {
-            // skip when no aria2c jsonrpc is running
-            return
-        }
-
-        const client = new JSONRPCClient((json) =>
-            fetch('http://localhost:6800/jsonrpc', {
-                method: 'POST',
-                body: json,
-            }).then((res) => res.text())
-        )
-
-        assertInstanceOf(await client.request('system.listMethods'), Array)
-
-        assertEquals(await client.notify('system.listMethods'), undefined)
-
-        const [r1, r2] = await client.batch(
-            client.createRequest('system.listMethods'),
-            client.createRequest('system.listMethods'),
-        ) as JSONRPCFulfilledResult[]
-
-        assertObjectMatch(r1, { status: 'fulfilled' })
-        assertObjectMatch(r2, { status: 'fulfilled' })
-    },
 })
 
 Deno.test({
@@ -137,9 +94,10 @@ Deno.test({
         )
 
         const client = new JSONRPCClient((json) =>
-            fetch('http://localhost:8888/jsonrpc', {
+            fetch('http://127.0.0.1:8888/jsonrpc', {
                 method: 'POST',
                 body: json,
+                signal: AbortSignal.timeout(5000),
             }).then((res) => res.text())
         )
 
