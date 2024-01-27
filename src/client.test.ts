@@ -16,8 +16,8 @@ Deno.test('client', async () => {
             result: 'bar',
         }).toString()
     )
-    assertEquals(await client.request('foo'), 'bar')
-    assertEquals(await client.notify('foo'), undefined)
+    assertEquals(await client.request('foo', undefined), 'bar')
+    assertEquals(await client.notify('foo', undefined), undefined)
 })
 
 Deno.test('client/batch', async () => {
@@ -31,14 +31,14 @@ Deno.test('client/batch', async () => {
         )
     )
 
-    assertEquals(await client.batch(client.createRequest('foo')), [{
+    assertEquals(await client.batch(client.createRequest('foo', undefined)), [{
         status: 'fulfilled',
         value: 'bar',
     }])
 
     assertEquals(
         await client.batch(
-            client.createRequest('foo'),
+            client.createRequest('foo', undefined),
         ),
         [{
             status: 'fulfilled',
@@ -48,9 +48,9 @@ Deno.test('client/batch', async () => {
 
     assertEquals(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ),
         [{
             status: 'fulfilled',
@@ -66,16 +66,16 @@ Deno.test('client/batch', async () => {
 
     assertEquals(
         await client.batch(
-            client.createNotification('foo'),
+            client.createNotification('foo', undefined),
         ),
         [],
     )
 
     assertEquals(
         await client.batch(
-            client.createNotification('foo1'),
-            client.createNotification('foo2'),
-            client.createNotification('foo3'),
+            client.createNotification('foo1', undefined),
+            client.createNotification('foo2', undefined),
+            client.createNotification('foo3', undefined),
         ),
         [],
     )
@@ -92,9 +92,9 @@ Deno.test('client/batch', async () => {
 
     assertInstanceOf(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ).catch((e) => e),
         JSONRPCError,
     )
@@ -115,9 +115,9 @@ Deno.test('client/batch', async () => {
 
     assertEquals(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ),
         [{
             status: 'rejected',
@@ -150,14 +150,14 @@ Deno.test('client/JSONRPCClientParseError', async () => {
     client = new JSONRPCClient(() => `malformed json`)
 
     assertInstanceOf(
-        await client.request('foo').catch((
+        await client.request('foo', undefined).catch((
             e,
         ) => e),
         JSONRPCClientParseError,
     )
 
     assertInstanceOf(
-        await client.batch(client.createRequest('foo')).catch((
+        await client.batch(client.createRequest('foo', undefined)).catch((
             e,
         ) => e),
         JSONRPCClientParseError,
@@ -165,7 +165,7 @@ Deno.test('client/JSONRPCClientParseError', async () => {
 
     assertInstanceOf(
         await new JSONRPCClient(() => `{"incorrect": "response object"}`)
-            .request('foo').catch((
+            .request('foo', undefined).catch((
                 e,
             ) => e),
         JSONRPCClientParseError,
@@ -178,7 +178,7 @@ Deno.test('client/JSONRPCClientParseError', async () => {
                 result: 6,
             })}`
         )
-            .request('foo').catch((
+            .request('foo', undefined).catch((
                 e,
             ) => e),
         JSONRPCClientParseError,
@@ -195,16 +195,16 @@ Deno.test('client/JSONRPCClientParseError', async () => {
 
     assertInstanceOf(
         await client.batch(
-            client.createRequest('foo'),
+            client.createRequest('foo', undefined),
         ).catch((e) => e),
         JSONRPCClientParseError,
     )
 
     assertInstanceOf(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ).catch((e) => e),
         JSONRPCClientParseError,
     )
@@ -217,9 +217,9 @@ Deno.test('client/JSONRPCClientParseError', async () => {
 
     assertInstanceOf(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ).catch((e) => e),
         JSONRPCClientParseError,
     )
@@ -239,9 +239,9 @@ Deno.test('client/JSONRPCClientParseError', async () => {
 
     assertEquals(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ).catch((e) => e.message),
         'ERR_MSG',
     )
@@ -258,9 +258,9 @@ Deno.test('client/JSONRPCClientParseError', async () => {
 
     assertInstanceOf(
         await client.batch(
-            client.createRequest('foo1'),
-            client.createRequest('foo2'),
-            client.createRequest('foo3'),
+            client.createRequest('foo1', undefined),
+            client.createRequest('foo2', undefined),
+            client.createRequest('foo3', undefined),
         ).catch((e) => e),
         JSONRPCClientParseError,
     )
@@ -288,13 +288,19 @@ Deno.test({
             }).then((res) => res.text())
         )
 
-        assertInstanceOf(await client.request('system.listMethods'), Array)
+        assertInstanceOf(
+            await client.request('system.listMethods', undefined),
+            Array,
+        )
 
-        assertEquals(await client.notify('system.listMethods'), undefined)
+        assertEquals(
+            await client.notify('system.listMethods', undefined),
+            undefined,
+        )
 
         const [r1, r2] = await client.batch(
-            client.createRequest('system.listMethods'),
-            client.createRequest('system.listMethods'),
+            client.createRequest('system.listMethods', undefined),
+            client.createRequest('system.listMethods', undefined),
         ) as JSONRPCFulfilledResult[]
 
         assertObjectMatch(r1, { status: 'fulfilled' })

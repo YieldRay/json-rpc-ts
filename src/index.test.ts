@@ -34,6 +34,7 @@ Deno.test('JSONRPCClient/JSONRPCServer', async () => {
         await client.request(
             // deno-lint-ignore no-explicit-any
             'no_such_method' as any,
+            undefined,
         ).catch((e) => e),
         {
             code: -32601,

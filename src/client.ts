@@ -51,7 +51,7 @@ export class JSONRPCClient<
 
     public createRequest<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<Methods[T]>[0],
+        params: Parameters<Methods[T]>[0],
     ): JSONRPCRequest {
         const id = getIDFromGenerator(this.idGenerator)
         const request = new JSONRPCRequest({
@@ -64,7 +64,7 @@ export class JSONRPCClient<
 
     public createNotification<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<Methods[T]>[0],
+        params: Parameters<Methods[T]>[0],
     ): JSONRPCNotification {
         const notification = new JSONRPCNotification({
             method,
@@ -78,7 +78,7 @@ export class JSONRPCClient<
      */
     public async request<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<Methods[T]>[0],
+        params: Parameters<Methods[T]>[0],
     ): Promise<ReturnType<Methods[T]>> {
         const request = this.createRequest(method, params)
         // responded json string
@@ -119,7 +119,7 @@ export class JSONRPCClient<
      */
     public async notify<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<Methods[T]>[0],
+        params: Parameters<Methods[T]>[0],
     ): Promise<void> {
         const notification = this.createNotification(method, params)
         await this.requestForResponse(JSON.stringify(notification))
