@@ -1,5 +1,8 @@
 import type { JSONRPCErrorInterface } from './dto/errors.ts'
 
+/**
+ * This can be used for constrain of type that can be converted to json
+ */
 export type JSONRPCValue = PrimitiveValue | StructuredValue
 
 export type PrimitiveValue = string | number | boolean | null
@@ -19,22 +22,20 @@ export type ArrayValue = Array<JSONRPCValue>
  *
  * If method throws a value that is not `JSONRPCError`, it will be treated as `JSONRPCInternalError`
  *
- * Note that client is allowed to send no params, meaning that params can also be `undefined`
+ * Note that client is allowed to send no params, meaning that params can also be `undefined`,
+ * server may also send result `undefined`
  */
 export interface JSONRPCMethods {
-    [method: string]: JSONRPCMethod
+    // deno-lint-ignore no-explicit-any
+    [method: string]: JSONRPCMethod<any, any>
 }
 
 /**
  * Represent any json rpc method, any detailed method should extend it
- *
- * Note that for a request, `params` MUST be `JSONRPCValue`,
- * however here `params` is `any` (just for simplicity)
  */
-export type JSONRPCMethod = (
-    // deno-lint-ignore no-explicit-any
-    params: any, //! client may send any params to server
-) => Promise<JSONRPCValue> | JSONRPCValue
+export type JSONRPCMethod<Params, Result> = (
+    params: Params,
+) => Promise<Result> | Result
 
 export type WithOptionalJSONRPCVersion<T extends object> =
     & Omit<T, 'jsonrpc'>
