@@ -2,17 +2,17 @@ import { assertEquals, assertObjectMatch } from 'std/assert/mod.ts'
 import { JSONRPCClient, JSONRPCServer } from './index.ts'
 
 Deno.test('JSONRPCClient/JSONRPCServer', async () => {
-    const methodSet = {
+    const methods = {
         upper: (str: string) => str.toUpperCase(),
         lower: (str: string) => str.toLowerCase(),
         plus: ([a, b]: [number, number]) => a + b,
         minus: ([a, b]: [number, number]) => a - b,
     }
 
-    const server = new JSONRPCServer(methodSet)
+    const server = new JSONRPCServer(methods)
 
-    const client = new JSONRPCClient<typeof methodSet>((json) =>
-        server.process(json)
+    const client = new JSONRPCClient<typeof methods>((json) =>
+        server.handleRequest(json)
     )
 
     assertEquals(await client.request('upper', 'hello'), 'HELLO')
@@ -83,7 +83,7 @@ Deno.test({
                 const url = new URL(request.url)
                 if (url.pathname === '/jsonrpc') {
                     return new Response(
-                        await server.process(await request.text()),
+                        await server.handleRequest(await request.text()),
                         {
                             headers: { 'content-type': 'application/json' },
                         },

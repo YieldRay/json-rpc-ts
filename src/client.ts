@@ -1,4 +1,4 @@
-import type { JSONRPCMethodSet, JSONRPCSettledResult } from './types.ts'
+import type { JSONRPCMethods, JSONRPCSettledResult } from './types.ts'
 import { JSONRPCNotification, JSONRPCRequest } from './dto/request.ts'
 import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'
 import { isJSONRPCResponse, JSONRPCResponse } from './dto/response.ts'
@@ -9,72 +9,49 @@ import {
     selfAddIdGenerator,
 } from './id.ts'
 
-type JSONRPCAnyRequest =
-    | JSONRPCNotification
-    | JSONRPCRequest
-    | Array<JSONRPCNotification | JSONRPCRequest>
-
 /**
- * The client cannot parse the server response
- */
-export class JSONRPCClientParseError extends Error {
-    override name = 'JSONRPCClientParseError'
-    request: JSONRPCAnyRequest
-    constructor(message: string, request: JSONRPCAnyRequest) {
-        super(message)
-        this.request = request
-    }
-}
-
-/**
- * Just wrap the JSON.parse function, with potential `JSONRPCClientParseError`
- */
-function parseJSON(
-    text: string,
-    associatedRequest: JSONRPCAnyRequest,
-): unknown {
-    try {
-        return JSON.parse(text)
-    } catch {
-        throw new JSONRPCClientParseError(
-            `The server send an malformed json`,
-            associatedRequest,
-        )
-    }
-}
-
-/**
- * Provide a external `processor` function to the constructor,
- * it should accept a string (json encoded from one or more json rpc request)
- * and your customized code should send this string to a json rpc server
- * for any response represented as **string**
+ * Provide a external `requestForResponse` function to the constructor,
+ * it should accept a `string` (json encoded from one or more json rpc request)
+ * and your customized function should send this string to a json rpc server
+ * for any response represented as `string`
  *
  * The constructor optionally accept a customized id generator, otherwise it use a
  * self added number
+ *
+ * To customize the request or response, you can extend `JSONRPCClient`.
+ *
+ * To customize request, overwrite `createRequest` and `createNotification` methods.
+ *
+ * To customize response, overwrite `request` `notify` and `batch` methods.
  */
 export class JSONRPCClient<
-    MethodSet extends JSONRPCMethodSet = JSONRPCMethodSet,
+    Methods extends JSONRPCMethods = JSONRPCMethods,
 > {
     /**
      * MUST be an infinite iterator
      */
-    private idGenerator: IDGenerator
+    protected idGenerator: IDGenerator
     /**
-     * The extern function to request the server for response
+     * The external function to send the json string to any rpc server,
+     * and fetch for response as string
      */
-    private processor: (input: string) => string | Promise<string>
+    protected requestForResponse: (input: string) => string | Promise<string>
 
-    constructor(
-        processor: (input: string) => string | Promise<string>,
+    /**
+     * @param requestForResponse An external function to send the json string to any rpc server,
+     * and fetch for response as string
+     */
+    public constructor(
+        requestForResponse: (input: string) => string | Promise<string>,
         idGenerator?: IDGenerator,
     ) {
-        this.processor = processor
+        this.requestForResponse = requestForResponse
         this.idGenerator = idGenerator || selfAddIdGenerator()
     }
 
-    public createRequest<T extends keyof MethodSet>(
+    public createRequest<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<MethodSet[T]>[0],
+        params?: Parameters<Methods[T]>[0],
     ): JSONRPCRequest {
         const id = getIDFromGenerator(this.idGenerator)
         const request = new JSONRPCRequest({
@@ -85,9 +62,9 @@ export class JSONRPCClient<
         return request
     }
 
-    public createNotification<T extends keyof MethodSet>(
+    public createNotification<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<MethodSet[T]>[0],
+        params?: Parameters<Methods[T]>[0],
     ): JSONRPCNotification {
         const notification = new JSONRPCNotification({
             method,
@@ -99,13 +76,15 @@ export class JSONRPCClient<
     /**
      * Send `JSONRPCRequest` to server, returns `JSONRPCValue` or throw `JSONRPCErrorInterface` (or `JSONRPCClientParseError`)
      */
-    async request<T extends keyof MethodSet>(
+    public async request<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<MethodSet[T]>[0],
-    ): Promise<ReturnType<MethodSet[T]>> {
+        params?: Parameters<Methods[T]>[0],
+    ): Promise<ReturnType<Methods[T]>> {
         const request = this.createRequest(method, params)
         // responded json string
-        const jsonString = await this.processor(JSON.stringify(request))
+        const jsonString = await this.requestForResponse(
+            JSON.stringify(request),
+        )
         const jsonValue = parseJSON(jsonString, request)
 
         // parsed response
@@ -130,7 +109,7 @@ export class JSONRPCClient<
             }
 
             // response.result is now JSONRPCValue
-            return response.result as ReturnType<MethodSet[T]>
+            return response.result as ReturnType<Methods[T]>
         }
     }
 
@@ -138,12 +117,12 @@ export class JSONRPCClient<
      * Send `JSONRPCNotification` to server, no returns,
      * only throws if your provided `processor` function throws
      */
-    async notify<T extends keyof MethodSet>(
+    public async notify<T extends keyof Methods>(
         method: T extends string ? T : never,
-        params?: Parameters<MethodSet[T]>[0],
+        params?: Parameters<Methods[T]>[0],
     ): Promise<void> {
         const notification = this.createNotification(method, params)
-        await this.processor(JSON.stringify(notification))
+        await this.requestForResponse(JSON.stringify(notification))
     }
 
     /**
@@ -170,11 +149,13 @@ export class JSONRPCClient<
      * @throws `JSONRPCError` - when server return single JSONRPCErrorResponse
      * @throws `JSONRPCClientParseError` - when server response cannot be parsed
      */
-    async batch(
+    public async batch(
         ...requests: Array<JSONRPCRequest | JSONRPCNotification>
     ): Promise<JSONRPCSettledResult[]> {
         // responded json string
-        const jsonString = await this.processor(JSON.stringify(requests))
+        const jsonString = await this.requestForResponse(
+            JSON.stringify(requests),
+        )
         const requestCount = requests.filter((r) => 'id' in r).length
         if (requestCount === 0) {
             // all the requests are notification
@@ -254,5 +235,39 @@ export class JSONRPCClient<
             }
         }
         return responses
+    }
+}
+
+type JSONRPCAnyRequest =
+    | JSONRPCNotification
+    | JSONRPCRequest
+    | Array<JSONRPCNotification | JSONRPCRequest>
+
+/**
+ * The client cannot parse the server response
+ */
+export class JSONRPCClientParseError extends Error {
+    override name = 'JSONRPCClientParseError'
+    request: JSONRPCAnyRequest
+    constructor(message: string, request: JSONRPCAnyRequest) {
+        super(message)
+        this.request = request
+    }
+}
+
+/**
+ * Just wrap the JSON.parse function, with potential `JSONRPCClientParseError`
+ */
+function parseJSON(
+    text: string,
+    associatedRequest: JSONRPCAnyRequest,
+): unknown {
+    try {
+        return JSON.parse(text)
+    } catch {
+        throw new JSONRPCClientParseError(
+            `The server send an malformed json`,
+            associatedRequest,
+        )
     }
 }

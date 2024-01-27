@@ -25,7 +25,7 @@ Deno.test(
         assertEquals(
             isJSONRPCError(
                 JSON.parse(
-                    await server.process(JSON.stringify({
+                    await server.handleRequest(JSON.stringify({
                         id: 1,
                         params: ' trim ',
                     })),
@@ -36,14 +36,14 @@ Deno.test(
 
         assertEquals(
             isJSONRPCError(
-                JSON.parse(await server.process('malformed json')).error,
+                JSON.parse(await server.handleRequest('malformed json')).error,
             ),
             true,
         )
 
         assertObjectMatch(
             JSON.parse(
-                await server.process('[]'),
+                await server.handleRequest('[]'),
             ),
             {
                 id: null,
@@ -52,7 +52,7 @@ Deno.test(
         )
 
         assertEquals(
-            await server.process(JSON.stringify([{
+            await server.handleRequest(JSON.stringify([{
                 jsonrpc: '2.0',
                 method: 'trim',
             }])),
@@ -61,7 +61,7 @@ Deno.test(
 
         assertObjectMatch(
             JSON.parse(
-                await server.process(JSON.stringify([{
+                await server.handleRequest(JSON.stringify([{
                     jsonrpc: '2.0',
                     id: 1,
                     params: ' trim ',
@@ -78,7 +78,7 @@ Deno.test(
 
         assertObjectMatch(
             JSON.parse(
-                await server.process(JSON.stringify([{
+                await server.handleRequest(JSON.stringify([{
                     id: null,
                     params: ' trim ',
                 }])),
@@ -91,13 +91,17 @@ Deno.test(
 
         assertObjectMatch(
             JSON.parse(
-                await server.process(JSON.stringify([{
+                await server.handleRequest(JSON.stringify([{
                     jsonrpc: '2.0',
                     id: 1,
                     method: 'trim',
                     params: ' trim ',
                 }, {
                     id: 2,
+                    method: 'trim',
+                    params: ' trim ',
+                }, {
+                    id: ['invalid id'],
                     method: 'trim',
                     params: ' trim ',
                 }])),
@@ -109,7 +113,21 @@ Deno.test(
                     id: 2,
                     error: { code: -32600, message: 'Invalid Request' },
                 },
+                2: {
+                    jsonrpc: '2.0',
+                    id: null,
+                    error: { code: -32600, message: 'Invalid Request' },
+                },
             },
+        )
+
+        assertEquals(
+            await server.handleRequest(JSON.stringify([{
+                jsonrpc: '2.0',
+                method: 'trim',
+                params: 'only notification',
+            }])),
+            '',
         )
     },
 )

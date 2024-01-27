@@ -16,49 +16,54 @@ import {
     JSONRPCSuccessResponse,
 } from './dto/response.ts'
 import { isJSONRPCID } from './id.ts'
-import type { JSONRPCMethodSet, JSONRPCValue } from './types.ts'
+import type { JSONRPCMethods, JSONRPCValue } from './types.ts'
 
 /**
  * Provide a method set object to the constructor, it should contains
  * a record with it's key is a string and value is a function
  * that handle the rpc calls.
  *
- * See `JSONRPCMethodSet` for how method in method set should be.
+ * See `JSONRPCMethods` for how method in method set should be.
  *
  * Note: avoid using `this` in method!
+ *
+ * To customize how your server handle request, extend `JSONRPCServer` and
+ * overwrite `getMethod` method, using this method, you can forward request
+ * params to an existing method in `methods`
  */
 export class JSONRPCServer<
-    MethodSet extends JSONRPCMethodSet = JSONRPCMethodSet,
+    Methods extends JSONRPCMethods = JSONRPCMethods,
 > {
-    private methodSet: MethodSet
+    protected methods: Methods
 
     constructor()
-    constructor(methodSet: MethodSet)
-    constructor(methodSet?: MethodSet) {
-        this.methodSet = methodSet || ({} as MethodSet)
+    constructor(methods: Methods)
+    constructor(methods?: Methods) {
+        this.methods = methods || ({} as Methods)
     }
 
     /**
      * Override this function, to customize the behavior
-     * when method is not in methodSet.
+     * when method is not in `methods`.
      *
      * You can also use this method to handle dynamic
      * method name if you like, but make sure you manually
      * throw `JSONRPCMethodNotFoundError` when required
      */
-    public methodNotFound(): JSONRPCValue {
+    // deno-lint-ignore no-unused-vars no-explicit-any
+    public methodNotFound(params: any): JSONRPCValue {
         throw new JSONRPCMethodNotFoundError()
     }
 
     /**
-     * Use this to get method in methodSet by method name
+     * Use this to get method in `methods` by method name
      */
-    public getMethod<T extends keyof MethodSet>(
+    public getMethod<T extends keyof Methods>(
         method: T,
-    ): MethodSet[T] | undefined {
-        const prop = this.methodSet[method]
+    ): Methods[T] | undefined {
+        const prop = this.methods[method]
         if (typeof prop === 'function') {
-            return prop.bind(this.methodSet) as MethodSet[T]
+            return prop.bind(this.methods) as Methods[T]
         }
 
         return undefined
@@ -67,11 +72,11 @@ export class JSONRPCServer<
     /**
      * Use this to replace or add more methods
      */
-    public setMethod<T extends keyof MethodSet>(
+    public setMethod<T extends keyof Methods>(
         method: T,
-        fn: MethodSet[T],
+        fn: Methods[T],
     ) {
-        Reflect.set(this.methodSet, method, fn)
+        Reflect.set(this.methods, method, fn)
         return this
     }
 
@@ -79,8 +84,8 @@ export class JSONRPCServer<
      * Given any string as input, return response as json string
      * @noexcept
      */
-    public async process(input: string): Promise<string> {
-        const resp = await this.processAnyRequest(input)
+    public async handleRequest(input: string): Promise<string> {
+        const resp = await this.processAnyJsonString(input)
         if (!resp) {
             return ''
         }
@@ -92,10 +97,10 @@ export class JSONRPCServer<
 
     /**
      * Process request or batch request, return corresponding value
-     * @returns corresponding response object or array or some other thing
+     * @returns Corresponding response object or array or some other thing
      * @noexcept
      */
-    private async processAnyRequest(
+    private async processAnyJsonString(
         jsonString: string,
     ): Promise<undefined | JSONRPCResponse | JSONRPCResponse[]> {
         let jsonValue: unknown
@@ -124,14 +129,16 @@ export class JSONRPCServer<
                 // just run each method in the event loop
                 // and immediately return nothing
                 Promise.allSettled(
-                    jsonValue.map((r) => this.processOneRequest(r)),
+                    jsonValue.map((r) => this.processSingleRequest(r)),
                 )
+                // If there are no Response objects contained within the Response array as it is to be sent to the client,
+                // the server MUST NOT return an empty Array and should return nothing at all.
                 return
             }
 
             const batchReturnValue: JSONRPCResponse[] = []
             for (const singleJsonValue of jsonValue) {
-                const returnValue = await this.processOneJsonValue(
+                const returnValue = await this.processSingleJsonValue(
                     singleJsonValue,
                 )
                 if (returnValue) {
@@ -139,15 +146,14 @@ export class JSONRPCServer<
                 }
                 // there SHOULD NOT be any Response objects for notifications
             }
-            if (batchReturnValue.length === 0) {
-                // If there are no Response objects contained within the Response array as it is to be sent to the client,
-                // the server MUST NOT return an empty Array and should return nothing at all.
-                return
-            }
+            //? `batchReturnValue.length` MUST greater that 0
+            // if (batchReturnValue.length === 0) {
+            //     return
+            // }
             return batchReturnValue
         }
         // single request
-        return this.processOneJsonValue(jsonValue)
+        return this.processSingleJsonValue(jsonValue)
     }
 
     /**
@@ -155,12 +161,12 @@ export class JSONRPCServer<
      * @returns `JSONRPCResponse` if is request, or `undefined` if is Notification
      * @noexcept
      */
-    private async processOneJsonValue(
+    private async processSingleJsonValue(
         jsonValue: unknown,
     ): Promise<JSONRPCResponse | undefined> {
         if (isJSONRPCRequest(jsonValue)) {
             // request or notification
-            return await this.processOneRequest(jsonValue)
+            return await this.processSingleRequest(jsonValue)
         }
 
         // jsonValue is not a valid Request object
@@ -185,15 +191,15 @@ export class JSONRPCServer<
     }
 
     /**
-     * WARN: this process JSONRPCNotification or JSONRPCRequest
+     * WARN: this process `JSONRPCNotification` or `JSONRPCRequest`
      * @noexcept
      */
-    private async processOneRequest(
+    private async processSingleRequest(
         request: JSONRPCNotification | JSONRPCRequest,
     ): Promise<JSONRPCResponse | undefined> {
         const { method, params } = request
 
-        // load method from methodSet or use the methodNotFound() function as fallback
+        // load method from `methods` or use the `methodNotFound()` function as fallback
         const methodFn = this.getMethod(method) ||
             this.methodNotFound.bind(this)
 

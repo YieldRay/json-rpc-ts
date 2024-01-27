@@ -21,7 +21,7 @@ export type ArrayValue = Array<JSONRPCValue>
  *
  * Note that client is allowed to send no params, meaning that params can also be `undefined`
  */
-export interface JSONRPCMethodSet {
+export interface JSONRPCMethods {
     [method: string]: JSONRPCMethod
 }
 

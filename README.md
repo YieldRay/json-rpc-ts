@@ -8,92 +8,55 @@ A strictly typed json-rpc(2.0) implementation, zero dependency, minimal abstract
 
 > Specification <https://www.jsonrpc.org/specification>
 
-```ts
-const methodSet = {
-    upper: (str: string) => str.toUpperCase(),
-    lower: (str: string) => str.toLowerCase(),
-    plus: ([a, b]: [number, number]) => a + b,
-    minus: ([a, b]: [number, number]) => a - b,
-}
-
-// initialize all methods with the constructor
-const server = new JSONRPCServer(methodSet)
-
-// or add methods manually
-const server = new JSONRPCServer<typeof methodSet>()
-server.setMethod('upper', methodSet.upper)
-server.setMethod('lower', methodSet.lower)
-server.setMethod('plus', methodSet.plus)
-server.setMethod('minus', methodSet.minus)
-
-// (optional) provide a generic parameter to enable ts check
-const client = new JSONRPCClient<typeof methodSet>((json) =>
-    server.process(json)
-)
-
-// request, Notification and batch are always async
-assertEquals(await client.request('upper', 'hello'), 'HELLO')
-
-assertEquals(
-    await client.batch(
-        client.createRequest('upper', 'nihao'),
-        // Notification does not have response, even when response errors
-        client.createNotification('upper'),
-        client.createRequest('upper', 'shijie'),
-        client.createRequest('plus', [1, 1]),
-    ),
-    [
-        {
-            status: 'fulfilled',
-            value: 'NIHAO',
-        },
-        {
-            status: 'fulfilled',
-            value: 'SHIJIE',
-        },
-        {
-            status: 'fulfilled',
-            value: 2,
-        },
-    ],
-)
-```
-
 Example to use the client
 
 ```ts
-const client = new JSONRPCClient((json) =>
+const requestForResponse = (json: string) =>
     fetch('http://localhost:6800/jsonrpc', {
         method: 'POST',
         body: json,
     }).then((res) => res.text())
-)
 
-const aria2cMethods = await client.request('system.listMethods')
+const client = new JSONRPCClient<{
+    'aria2.addUri': (
+        urls: string[],
+        options?: object,
+        position?: number,
+    ) => string
+    'aria2.remove': (gid: string) => string
+    'system.listMethods': () => string[]
+}>(requestForResponse)
+
+const resultGid: string = await client.request('aria2.addUri', [
+    ['https://example.net/index.html'],
+    {},
+    0,
+])
 ```
 
 Example to use the server
 
 ```ts
-const server = new JSONRPCServer()
+const server = new JSONRPCServer({
+    upper: (str: string) => str.toUpperCase(),
+    lower: (str: string) => str.toLowerCase(),
+    plus: ([a, b]: [number, number]) => a + b,
+    minus: ([a, b]: [number, number]) => a - b,
+})
 
+// or:
 server.setMethod('trim', (str: string) => str.trim())
 server.setMethod('trimStart', (str: string) => str.trimStart())
 server.setMethod('trimEnd', (str: string) => str.trimEnd())
 
 const httpServer = Deno.serve(
     async (request) => {
-        const url = new URL(request.url)
-        if (url.pathname === '/jsonrpc') {
-            return new Response(
-                // server.process() accept string and returns Promise<string>
-                await server.process(await request.text()),
-                {
-                    headers: { 'content-type': 'application/json' },
-                },
-            )
-        }
-        return new Response('404', { status: 404 })
+        // server.handleRequest() accept string and returns Promise<string>
+        const jsonString = await server.handleRequest(await request.text())
+
+        return new Response(jsonString, {
+            headers: { 'content-type': 'application/json' },
+        })
     },
 )
 ```

@@ -223,6 +223,47 @@ Deno.test('client/JSONRPCClientParseError', async () => {
         ).catch((e) => e),
         JSONRPCClientParseError,
     )
+
+    client = new JSONRPCClient(() =>
+        JSON.stringify(
+            {
+                jsonrpc: '2.0',
+                id: null,
+                error: {
+                    code: 0,
+                    message: 'ERR_MSG',
+                },
+            },
+        )
+    )
+
+    assertEquals(
+        await client.batch(
+            client.createRequest('foo1'),
+            client.createRequest('foo2'),
+            client.createRequest('foo3'),
+        ).catch((e) => e.message),
+        'ERR_MSG',
+    )
+
+    client = new JSONRPCClient(() =>
+        JSON.stringify(
+            {
+                jsonrpc: '2.0',
+                id: null,
+                result: 'wrong server',
+            },
+        )
+    )
+
+    assertInstanceOf(
+        await client.batch(
+            client.createRequest('foo1'),
+            client.createRequest('foo2'),
+            client.createRequest('foo3'),
+        ).catch((e) => e),
+        JSONRPCClientParseError,
+    )
 })
 
 Deno.test({

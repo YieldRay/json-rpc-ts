@@ -5,7 +5,7 @@
         "noImplicitOverride": true
     },
     "imports": {
-        "std/": "https://deno.land/std@0.209.0/"
+        "std/": "https://deno.land/std@0.213.0/"
     },
     "tasks": {
         "lint": "deno lint",
