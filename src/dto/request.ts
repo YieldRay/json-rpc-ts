@@ -24,7 +24,7 @@ export class JSONRPCNotification {
         this.params = object.params
     }
 
-    public toString() {
+    public toString(): string {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             method: this.method,
@@ -49,7 +49,7 @@ export class JSONRPCRequest extends JSONRPCNotification {
         this.id = object.id
     }
 
-    public override toString() {
+    public override toString(): string {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             method: this.method,

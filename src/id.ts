@@ -3,7 +3,7 @@ export type JSONRPCID =
     | number // SHOULD NOT contain fractional parts
     | null // unknown id
 
-export function* selfAddIdGenerator() {
+export function* selfAddIdGenerator(): Generator<number, void, unknown> {
     let count = 0
     for (;;) {
         yield ++count

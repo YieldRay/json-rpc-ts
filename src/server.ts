@@ -75,7 +75,7 @@ export class JSONRPCServer<
     public setMethod<T extends keyof Methods>(
         method: T,
         fn: Methods[T],
-    ) {
+    ): this {
         Reflect.set(this.methods, method, fn)
         return this
     }

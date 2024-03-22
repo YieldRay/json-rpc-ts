@@ -17,7 +17,7 @@ export class JSONRPCSuccessResponse {
         this.result = object.result
     }
 
-    public toString() {
+    public toString(): string {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             id: this.id,
@@ -41,7 +41,7 @@ export class JSONRPCErrorResponse {
         this.error = object.error
     }
 
-    public toString() {
+    public toString(): string {
         return JSON.stringify({
             jsonrpc: this.jsonrpc,
             id: this.id,

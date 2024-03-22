@@ -1,11 +1,25 @@
 {
+    "name": "@ray/json-rpc-ts",
+    "version": "0.1.3",
+    "exports": "./mod.ts",
+    "publish": {
+        "include": [
+            "LICENSE",
+            "README.md",
+            "src/**/*.ts"
+        ],
+        "exclude": [
+            ".github",
+            "src/**/*.test.ts"
+        ]
+    },
     "compilerOptions": {
         "strict": true,
         "useUnknownInCatchVariables": true,
         "noImplicitOverride": true
     },
     "imports": {
-        "std/": "https://deno.land/std@0.213.0/"
+        "std/": "https://deno.land/std@0.220.1/"
     },
     "tasks": {
         "lint": "deno lint",
