@@ -11,8 +11,9 @@ console.log(
 
 const pkg = JSON.parse(Deno.readTextFileSync('./deno.json'))
 
-if (Deno.statSync('./package.json').isFile) {
+try {
     Deno.removeSync('./package.json')
+} catch { // NOOP
 }
 
 const packageJson = {

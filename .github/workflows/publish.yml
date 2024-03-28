@@ -37,7 +37,13 @@ jobs:
               run: deno publish --allow-dirty
 
             - name: Build for NPM
-              run: deno run -A build.ts
+              run: deno task build
+
+            - name: Set up Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  registry-url: "https://registry.npmjs.org"
 
             - name: NPM (dry run)
               if: github.event_name == 'push'
@@ -46,3 +52,5 @@ jobs:
             - name: NPM (real)
               if: github.event_name == 'release'
               run: npm publish --provenance --access public
+              env:
+                  NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
