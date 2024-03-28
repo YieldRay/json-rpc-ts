@@ -1,3 +1,6 @@
 docs/
 coverage/
 cov.lcov
+node_modules/
+dist/
+package.json

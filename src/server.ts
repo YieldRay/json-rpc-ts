@@ -7,12 +7,12 @@ import {
 } from './dto/errors.ts'
 import {
     isJSONRPCRequest,
-    JSONRPCNotification,
-    JSONRPCRequest,
+    type JSONRPCNotification,
+    type JSONRPCRequest,
 } from './dto/request.ts'
 import {
     JSONRPCErrorResponse,
-    JSONRPCResponse,
+    type JSONRPCResponse,
     JSONRPCSuccessResponse,
 } from './dto/response.ts'
 import { isJSONRPCID } from './id.ts'

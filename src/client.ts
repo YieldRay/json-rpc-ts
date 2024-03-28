@@ -1,7 +1,10 @@
 import type { JSONRPCMethods, JSONRPCSettledResult } from './types.ts'
+import type {
+    JSONRPCErrorResponse,
+    JSONRPCSuccessResponse,
+} from './dto/response.ts'
 import { JSONRPCNotification, JSONRPCRequest } from './dto/request.ts'
-import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'
-import { isJSONRPCResponse, JSONRPCResponse } from './dto/response.ts'
+import { isJSONRPCResponse, type JSONRPCResponse } from './dto/response.ts'
 import { JSONRPCError } from './dto/errors.ts'
 import {
     getIDFromGenerator,

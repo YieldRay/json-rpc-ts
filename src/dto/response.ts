@@ -1,6 +1,6 @@
 import type { JSONRPCValue, WithOptionalJSONRPCVersion } from '../types.ts'
 import { isJSONRPCID, type JSONRPCID } from '../id.ts'
-import { isJSONRPCError, JSONRPCErrorInterface } from './errors.ts'
+import { isJSONRPCError, type JSONRPCErrorInterface } from './errors.ts'
 
 export class JSONRPCSuccessResponse {
     public jsonrpc = '2.0' as const

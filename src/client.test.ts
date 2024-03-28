@@ -3,10 +3,10 @@ import {
     assertInstanceOf,
     assertObjectMatch,
 } from 'std/assert/mod.ts'
-import { JSONRPCClient, JSONRPCClientParseError } from './client.ts'
-import { JSONRPCFulfilledResult } from './types.ts'
-import { JSONRPCRequest } from './dto/request.ts'
+import type { JSONRPCFulfilledResult } from './types.ts'
+import type { JSONRPCRequest } from './dto/request.ts'
 import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'
+import { JSONRPCClient, JSONRPCClientParseError } from './client.ts'
 import { JSONRPCError } from './dto/errors.ts'
 
 Deno.test('client', async () => {

@@ -1,12 +1,32 @@
 # json-rpc-ts
 
 [![deno.land/x](https://shield.deno.dev/x/json_rpc_ts)](https://deno.land/x/json_rpc_ts)
+[![JSR](https://jsr.io/badges/@yieldray/json-rpc-ts)](https://jsr.io/@yieldray/json-rpc-ts)
+[![npm](https://img.shields.io/npm/v/@yieldray/json-rpc-ts)](https://www.npmjs.com/package/@yieldray/json-rpc-ts)
 [![codecov](https://codecov.io/gh/YieldRay/json-rpc-ts/graph/badge.svg?token=BabjRkI8jk)](https://codecov.io/gh/YieldRay/json-rpc-ts)
 [![ci](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml)
 
 A strictly typed json-rpc(2.0) implementation, zero dependency, minimal abstraction, with simple api
 
 > Specification <https://www.jsonrpc.org/specification>
+
+# Installation
+
+For Node.js
+
+```sh
+npx jsr add @yieldray/json-rpc-ts # recommended
+# or
+npm install @yieldray/json-rpc-ts
+```
+
+For Deno
+
+```sh
+deno add @yieldray/json-rpc-ts
+```
+
+# Examples
 
 Example to use the client
 
@@ -59,14 +79,4 @@ const httpServer = Deno.serve(
         })
     },
 )
-```
-
-# build for JavaScript
-
-To use this library without typescript, you have to build it to javascript.
-
-```sh
-git clone https://github.com/YieldRay/json-rpc-ts.git
-cd json-rpc-ts
-esbuild --bundle src/index.ts --outdir=dist --format=esm
 ```

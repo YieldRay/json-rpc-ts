@@ -1,6 +1,6 @@
 {
-    "name": "@ray/json-rpc-ts",
-    "version": "0.1.3",
+    "name": "@yieldray/json-rpc-ts",
+    "version": "0.2.0",
     "exports": "./mod.ts",
     "publish": {
         "include": [
@@ -21,7 +21,7 @@
         "noImplicitOverride": true
     },
     "imports": {
-        "std/": "https://deno.land/std@0.220.1/"
+        "std/": "https://deno.land/std@0.221.0/"
     },
     "tasks": {
         "lint": "deno lint",
@@ -30,7 +30,8 @@
         "test": "deno test --parallel --coverage --trace-ops",
         "cov:gen": "deno coverage coverage --lcov --output=cov.lcov",
         "cov:view": "deno coverage --html coverage",
-        "cov:clean": "rm -rf ./coverage/ cov.lcov"
+        "cov:clean": "rm -rf ./coverage/ cov.lcov",
+        "build": "deno run -A build.ts"
     },
     "fmt": {
         "lineWidth": 80,
@@ -43,12 +44,13 @@
             ".github",
             "deno.json",
             "README.md",
-            "mod.ts"
+            "*.ts"
         ]
     },
     "exclude": [
         ".git",
         "docs",
-        "coverage"
+        "coverage",
+        "dist"
     ]
 }
