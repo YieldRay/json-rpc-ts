@@ -1,0 +1,19 @@
+// This file is redundant for Deno
+// But necessary for unbuild, as it indirectly reads this config
+// https://docs.deno.com/runtime/manual/advanced/typescript/configuration
+{
+    "compilerOptions": {
+      "allowJs": true,
+      "esModuleInterop": true,
+      "experimentalDecorators": false,
+      "inlineSourceMap": true,
+      "isolatedModules": true,
+      "jsx": "react",
+      "module": "esnext",
+      "moduleDetection": "force",
+      "strict": true,
+      "target": "esnext",
+      "useDefineForClassFields": true,
+      "allowImportingTsExtensions": true
+    }
+  }
