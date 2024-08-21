@@ -1,4 +1,4 @@
-import { assertEquals, assertObjectMatch } from 'std/assert/mod.ts'
+import { assertEquals, assertObjectMatch } from '@std/assert'
 import { JSONRPCClient, JSONRPCServer } from './index.ts'
 
 Deno.test('JSONRPCClient/JSONRPCServer', async () => {

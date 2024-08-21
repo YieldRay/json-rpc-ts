@@ -1,8 +1,4 @@
-import {
-    assertEquals,
-    assertInstanceOf,
-    assertObjectMatch,
-} from 'std/assert/mod.ts'
+import { assertEquals, assertInstanceOf, assertObjectMatch } from '@std/assert'
 import type { JSONRPCFulfilledResult } from './types.ts'
 import type { JSONRPCRequest } from './dto/request.ts'
 import { JSONRPCErrorResponse, JSONRPCSuccessResponse } from './dto/response.ts'

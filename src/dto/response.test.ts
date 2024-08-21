@@ -1,4 +1,4 @@
-import { assertEquals } from 'std/assert/mod.ts'
+import { assertEquals } from '@std/assert'
 import { isJSONRPCResponse } from './response.ts'
 
 Deno.test('isJSONRPCResponse', () => {

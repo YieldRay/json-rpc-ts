@@ -1,8 +1,4 @@
-import {
-    assertEquals,
-    assertInstanceOf,
-    assertObjectMatch,
-} from 'std/assert/mod.ts'
+import { assertEquals, assertInstanceOf, assertObjectMatch } from '@std/assert'
 import { JSONRPCServer } from './server.ts'
 import { isJSONRPCError } from './dto/errors.ts'
 
