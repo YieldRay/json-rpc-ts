@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/YieldRay/json-rpc-ts/graph/badge.svg?token=BabjRkI8jk)](https://codecov.io/gh/YieldRay/json-rpc-ts)
 [![ci](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/yieldray/json-rpc-ts/actions/workflows/ci.yml)
 
-A strictly typed json-rpc(2.0) implementation, zero dependency, minimal abstraction, with simple api
+A strictly typed json-rpc(2.0) implementation, zero dependency, minimal abstraction, with simple api.
 
 > Specification <https://www.jsonrpc.org/specification>
 

@@ -22,6 +22,14 @@ const packageJson = {
     types: './dist/index.d.ts',
     files: ['dist'],
     author: 'YieldRay',
+    description: 'A strictly typed json-rpc(2.0) implementation',
+    keywords: [
+        'jsonrpc',
+        'json-rpc',
+        'rpc',
+        'json',
+        'jsonrpc-2.0',
+    ],
     license: 'MIT',
     repository: {
         type: 'git',
@@ -38,4 +46,4 @@ console.log('New package.json created.')
 console.log(packageJson)
 
 console.log('Building package using unbuild...')
-execSync('npx unbuild@2.0.0', { stdio: ['ignore', 'inherit', 'inherit'] })
+execSync('npx -y unbuild@2.0.0', { stdio: ['ignore', 'inherit', 'inherit'] })
