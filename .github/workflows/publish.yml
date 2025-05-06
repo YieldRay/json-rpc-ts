@@ -3,8 +3,6 @@ name: publish
 on:
     push:
         branches: [main]
-    release:
-        types: [published]
 
 jobs:
     publish:
@@ -20,7 +18,7 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Set up Deno
-              uses: denoland/setup-deno@v1
+              uses: denoland/setup-deno@v2
 
             - name: Format
               run: deno fmt
@@ -28,29 +26,24 @@ jobs:
             - name: Type check
               run: deno task test
 
-            - name: Publish (dry run)
-              if: github.event_name == 'push'
-              run: deno publish --allow-dirty --dry-run
-
-            - name: Publish (real)
-              if: github.event_name == 'release'
-              run: deno publish --allow-dirty
-
             - name: Build for NPM
               run: deno task build
 
-            - name: Set up Node
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '20.x'
-                  registry-url: 'https://registry.npmjs.org'
-
-            - name: NPM (dry run)
-              if: github.event_name == 'push'
-              run: npm publish --dry-run
+            - name: Publish (real)
+              run: deno publish --allow-dirty
 
             - name: NPM (real)
-              if: github.event_name == 'release'
-              run: npm publish --provenance --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+              id: publish
+              uses: JS-DevTools/npm-publish@v3
+              with:
+                  token: ${{secrets.NPM_TOKEN}}
+                  access: public
+                  provenance: true
+
+            - name: Release on GitHub
+              if: ${{ steps.publish.outputs.type }}
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: v${{ steps.publish.outputs.version }}
+                  draft: false
+                  generate_release_notes: true

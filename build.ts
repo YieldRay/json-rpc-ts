@@ -1,5 +1,3 @@
-import { execSync } from 'node:child_process'
-
 const pkg = JSON.parse(Deno.readTextFileSync('./deno.json'))
 
 try {
@@ -45,5 +43,11 @@ Deno.writeTextFileSync('./package.json', JSON.stringify(packageJson, null, 4))
 console.log('New package.json created.')
 console.log(packageJson)
 
-console.log('Building package using unbuild...')
-execSync('npx -y unbuild@2.0.0', { stdio: ['ignore', 'inherit', 'inherit'] })
+const builderName = 'unbuild@3.5.0'
+console.log(`Building package using ${builderName}...`)
+new Deno.Command('npx', {
+    args: ['-y', builderName],
+    stdin: 'null',
+    stdout: 'inherit',
+    stderr: 'inherit',
+}).spawn()

@@ -31,7 +31,7 @@ export interface JSONRPCMethods {
 }
 
 /**
- * Represent any json rpc method, any detailed method should extend it
+ * Represents any JSON-RPC method. Detailed methods should extend this type.
  */
 export type JSONRPCMethod<Params, Result> = (
     params: Params,

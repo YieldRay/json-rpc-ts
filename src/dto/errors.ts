@@ -36,7 +36,7 @@ export class JSONRPCError extends Error implements JSONRPCErrorInterface {
 }
 
 /**
- * This ONLY check if `x` is `JSONRPCErrorInterface`
+ * This function ONLY check that if `x` is `JSONRPCErrorInterface`
  *
  * Because it'a shared method between client and server, but `JSONRPCError` is server side only
  */

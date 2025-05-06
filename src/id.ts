@@ -3,6 +3,9 @@ export type JSONRPCID =
     | number // SHOULD NOT contain fractional parts
     | null // unknown id
 
+/**
+ * Creates a generator that yields incrementing numeric IDs starting from 1.
+ */
 export function* selfAddIdGenerator(): Generator<number, void, unknown> {
     let count = 0
     for (;;) {
@@ -24,6 +27,12 @@ export function getIDFromGenerator(g: IDGenerator): JSONRPCID {
     }
 }
 
+/**
+ * Checks if the given value is a valid JSON-RPC ID.
+ * A valid JSON-RPC ID can be a string, a number (without fractional parts), or null.
+ */
 export function isJSONRPCID(x: unknown): x is JSONRPCID {
-    return typeof x === 'string' || typeof x === 'number' || x === null
+    return typeof x === 'string' ||
+        (typeof x === 'number' && Number.isInteger(x)) ||
+        x === null
 }

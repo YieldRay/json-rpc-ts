@@ -52,6 +52,9 @@ export class JSONRPCClient<
         this.idGenerator = idGenerator || selfAddIdGenerator()
     }
 
+    /**
+     * Creates a JSON-RPC request object with an automatically generated ID.
+     */
     public createRequest<T extends keyof Methods>(
         method: T extends string ? T : never,
         params: Parameters<Methods[T]>[0],
