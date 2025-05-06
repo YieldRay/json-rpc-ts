@@ -14,6 +14,7 @@
       "strict": true,
       "target": "esnext",
       "useDefineForClassFields": true,
-      "allowImportingTsExtensions": true
+      "allowImportingTsExtensions": true,
+      "noEmit": true
     }
   }

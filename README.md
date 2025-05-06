@@ -23,7 +23,7 @@ npm install @yieldray/json-rpc-ts
 For Deno
 
 ```sh
-deno add @yieldray/json-rpc-ts
+deno add jsr:@yieldray/json-rpc-ts
 ```
 
 # Examples
