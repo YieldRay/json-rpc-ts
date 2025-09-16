@@ -13,36 +13,36 @@ import {
 } from './id.ts'
 
 /**
- * Provide a external `requestForResponse` function to the constructor,
- * it should accept a `string` (json encoded from one or more json rpc request)
- * and your customized function should send this string to a json rpc server
- * for any response represented as `string`
+ * Provide an external `requestForResponse` function to the constructor.
+ * This function should accept a `string` (JSON-encoded from one or more JSON-RPC requests),
+ * and your custom implementation should send this string to a JSON-RPC server,
+ * returning any response as a `string`.
  *
- * The constructor optionally accept a customized id generator, otherwise it use a
- * self added number
+ * The constructor optionally accepts a custom ID generator; otherwise, it uses
+ * an internally generated number.
  *
- * To customize the request or response, you can extend `JSONRPCClient`.
+ * To customize requests or responses, extend the `JSONRPCClient` class.
  *
- * To customize request, overwrite `createRequest` and `createNotification` methods.
+ * To customize requests, override the `createRequest` and `createNotification` methods.
  *
- * To customize response, overwrite `request` `notify` and `batch` methods.
+ * To customize responses, override the `request`, `notify`, and `batch` methods.
  */
 export class JSONRPCClient<
     Methods extends JSONRPCMethods = JSONRPCMethods,
 > {
     /**
-     * MUST be an infinite iterator
+     * MUST be an infinite iterator.
      */
     protected idGenerator: IDGenerator
     /**
-     * The external function to send the json string to any rpc server,
-     * and fetch for response as string
+     * The external function that sends the JSON string to any RPC server
+     * and fetches the response as a string.
      */
     protected requestForResponse: (input: string) => string | Promise<string>
 
     /**
-     * @param requestForResponse An external function to send the json string to any rpc server,
-     * and fetch for response as string
+     * @param requestForResponse An external function that sends the JSON string to any RPC server
+     * and fetches the response as a string.
      */
     public constructor(
         requestForResponse: (input: string) => string | Promise<string>,
@@ -68,6 +68,9 @@ export class JSONRPCClient<
         return request
     }
 
+    /**
+     * Creates a JSON-RPC notification object.
+     */
     public createNotification<T extends keyof Methods>(
         method: T extends string ? T : never,
         params: Parameters<Methods[T]>[0],
@@ -80,7 +83,8 @@ export class JSONRPCClient<
     }
 
     /**
-     * Send `JSONRPCRequest` to server, returns `JSONRPCValue` or throw `JSONRPCErrorInterface` (or `JSONRPCClientParseError`)
+     * Sends a `JSONRPCRequest` to the server and returns a `JSONRPCValue`,
+     * or throws a `JSONRPCErrorInterface` (or `JSONRPCClientParseError`).
      */
     public async request<T extends keyof Methods>(
         method: T extends string ? T : never,
@@ -120,8 +124,8 @@ export class JSONRPCClient<
     }
 
     /**
-     * Send `JSONRPCNotification` to server, no returns,
-     * only throws if your provided `processor` function throws
+     * Sends a `JSONRPCNotification` to the server. No return value.
+     * Throws only if your provided `processor` function throws.
      */
     public async notify<T extends keyof Methods>(
         method: T extends string ? T : never,
@@ -132,14 +136,13 @@ export class JSONRPCClient<
     }
 
     /**
-     * You should use the `createRequest()` or `createNotification()` method to
-     * create the requests array. Response order is always matched by id.
+     * Use the `createRequest()` or `createNotification()` method to create the requests array.
+     * Response order is always matched by ID.
      *
-     * Throws `JSONRPCClientParseError` if server response cannot be parsed,
-     * note that it does not throws for any `JSONRPCErrorResponse`, in this
-     * case it will be a single object: `{ status: 'rejected', reason: {...} }`
+     * Throws `JSONRPCClientParseError` if the server response cannot be parsed.
+     * Note: It does not throw for any `JSONRPCErrorResponse`; in this case, it will be a single object: `{ status: 'rejected', reason: {...} }`
      *
-     * Usually it returns be like (same as the `Promise.allSettled()` method):
+     * The return value is similar to the `Promise.allSettled()` method:
      * ```js
      * [
      *    { status: 'fulfilled', value: '...' },
@@ -152,8 +155,9 @@ export class JSONRPCClient<
      *    },
      * ]
      * ```
-     * @throws `JSONRPCError` - when server return single JSONRPCErrorResponse
-     * @throws `JSONRPCClientParseError` - when server response cannot be parsed
+     * @throws `JSONRPCError` - when the server returns a single JSONRPCErrorResponse
+     * @throws `JSONRPCClientParseError` - when the server response cannot be parsed
+     * @see https://www.jsonrpc.org/specification#batch
      */
     public async batch(
         ...requests: Array<JSONRPCRequest | JSONRPCNotification>
@@ -244,13 +248,16 @@ export class JSONRPCClient<
     }
 }
 
+/**
+ * A union type representing any JSON-RPC request, either a notification or a request.
+ */
 type JSONRPCAnyRequest =
     | JSONRPCNotification
     | JSONRPCRequest
     | Array<JSONRPCNotification | JSONRPCRequest>
 
 /**
- * The client cannot parse the server response
+ * Indicates that the client cannot parse the server response.
  */
 export class JSONRPCClientParseError extends Error {
     override name = 'JSONRPCClientParseError'
@@ -262,7 +269,8 @@ export class JSONRPCClientParseError extends Error {
 }
 
 /**
- * Just wrap the JSON.parse function, with potential `JSONRPCClientParseError`
+ * Wraps JSON.parse to provide better error handling.
+ * Throws JSONRPCClientParseError if the response is not valid JSON.
  */
 function parseJSON(
     text: string,

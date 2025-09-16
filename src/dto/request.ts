@@ -2,9 +2,9 @@ import type { JSONRPCValue, WithOptionalJSONRPCVersion } from '../types.ts'
 import { isJSONRPCID, type JSONRPCID } from '../id.ts'
 
 /**
- * You should create this object via method from `JSONRPCClient`, it generate id for you.
+ * You should create this object using a method from `JSONRPCClient`, which generates the ID for you.
  *
- * It's less likely that you need to create this object manually.
+ * It is unlikely that you will need to create this object manually.
  */
 export class JSONRPCNotification {
     public jsonrpc = '2.0' as const
@@ -34,9 +34,10 @@ export class JSONRPCNotification {
 }
 
 /**
- * You should create this object via method from `JSONRPCClient`, it generate id for you.
+ * You should create this object using a method from `JSONRPCClient`, which generates the ID for you.
  *
- * It's less likely that you need to create this object manually.
+ * It is unlikely that you will need to create this object manually.
+ * @see https://www.jsonrpc.org/specification#request_object
  */
 export class JSONRPCRequest extends JSONRPCNotification {
     /**
@@ -60,9 +61,9 @@ export class JSONRPCRequest extends JSONRPCNotification {
 }
 
 /**
- * WARN: this check if `x` is `JSONRPCNotification` or `JSONRPCRequest`
+ * WARNING: This function checks if `x` is a `JSONRPCNotification` or a `JSONRPCRequest`.
  *
- * To check if `x` is `JSONRPCRequest`, ONLY need to check `'id' in x`
+ * To determine if `x` is a `JSONRPCRequest`, you ONLY need to check if `'id' in x`.
  */
 export function isJSONRPCRequest(
     x: unknown,

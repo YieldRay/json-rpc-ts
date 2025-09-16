@@ -2,6 +2,9 @@ import type { JSONRPCValue, WithOptionalJSONRPCVersion } from '../types.ts'
 import { isJSONRPCID, type JSONRPCID } from '../id.ts'
 import { isJSONRPCError, type JSONRPCErrorInterface } from './errors.ts'
 
+/**
+ * @see https://www.jsonrpc.org/specification#response_object
+ */
 export class JSONRPCSuccessResponse {
     public jsonrpc = '2.0' as const
     public id: JSONRPCID
@@ -26,6 +29,9 @@ export class JSONRPCSuccessResponse {
     }
 }
 
+/**
+ * @see https://www.jsonrpc.org/specification#response_object
+ */
 export class JSONRPCErrorResponse {
     public jsonrpc = '2.0' as const
     /**
@@ -54,8 +60,14 @@ export class JSONRPCErrorResponse {
     }
 }
 
+/**
+ * @see https://www.jsonrpc.org/specification#response_object
+ */
 export type JSONRPCResponse = JSONRPCSuccessResponse | JSONRPCErrorResponse
 
+/**
+ * Checks whether the given value is a valid JSON-RPC 2.0 Response object.
+ */
 export function isJSONRPCResponse(x: unknown): x is JSONRPCResponse {
     if (!x || typeof x !== 'object') {
         return false

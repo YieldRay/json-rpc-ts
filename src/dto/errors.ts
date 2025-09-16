@@ -1,5 +1,9 @@
 import type { JSONRPCValue } from '../types.ts'
 
+/**
+ * @see https://www.jsonrpc.org/specification#error_object
+ * When a rpc call encounters an error, the Response Object MUST contain the error member with a value that is a Object with the following members:
+ */
 export interface JSONRPCErrorInterface {
     /**
      * A Number that indicates the error type that occurred.
@@ -19,6 +23,23 @@ export interface JSONRPCErrorInterface {
     data?: JSONRPCValue
 }
 
+/**
+ * To define your own JSON-RPC error, you can extend this class with your custom error code (in the range -32000 to -32099).
+ * @example
+ * ```ts
+ * // Reserved for implementation-defined server-errors.
+ * class MyCustomError extends JSONRPCError {
+ *   constructor(data?: JSONRPCValue) {
+ *     super({
+ *       code: -32001, // -32000 to -32099
+ *       message: 'Server error',
+ *       data: data,
+ *     })
+ *   }
+ * }
+ * ```
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCError extends Error implements JSONRPCErrorInterface {
     /**
      * The error codes from and including -32768 to -32000 are reserved for pre-defined errors. Any code within this range, but not defined explicitly below is reserved for future use. The error codes are nearly the same as those suggested for XML-RPC at the following url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
@@ -36,9 +57,9 @@ export class JSONRPCError extends Error implements JSONRPCErrorInterface {
 }
 
 /**
- * This function ONLY check that if `x` is `JSONRPCErrorInterface`
+ * This function ONLY checks whether `x` is a `JSONRPCErrorInterface`.
  *
- * Because it'a shared method between client and server, but `JSONRPCError` is server side only
+ * `JSONRPCErrorInterface` is shared between client and server, but `JSONRPCError` is server-side only.
  */
 export function isJSONRPCError(x: unknown): x is JSONRPCErrorInterface {
     if (!x || typeof x !== 'object') {
@@ -54,6 +75,11 @@ export function isJSONRPCError(x: unknown): x is JSONRPCErrorInterface {
     return false
 }
 
+/**
+ * Invalid JSON was received by the server.
+ * An error occurred on the server while parsing the JSON text.
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCParseError extends JSONRPCError {
     constructor(data?: JSONRPCValue) {
         super({
@@ -64,6 +90,10 @@ export class JSONRPCParseError extends JSONRPCError {
     }
 }
 
+/**
+ * The JSON sent is not a valid Request object.
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCInvalidRequestError extends JSONRPCError {
     constructor(data?: JSONRPCValue) {
         super({
@@ -74,6 +104,10 @@ export class JSONRPCInvalidRequestError extends JSONRPCError {
     }
 }
 
+/**
+ * The method does not exist / is not available.
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCMethodNotFoundError extends JSONRPCError {
     constructor(data?: JSONRPCValue) {
         super({
@@ -84,6 +118,10 @@ export class JSONRPCMethodNotFoundError extends JSONRPCError {
     }
 }
 
+/**
+ * Invalid method parameter(s).
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCInvalidParamsError extends JSONRPCError {
     constructor(data?: JSONRPCValue) {
         super({
@@ -94,6 +132,10 @@ export class JSONRPCInvalidParamsError extends JSONRPCError {
     }
 }
 
+/**
+ * Internal JSON-RPC error.
+ * @see https://www.jsonrpc.org/specification#error_object
+ */
 export class JSONRPCInternalError extends JSONRPCError {
     constructor(data?: JSONRPCValue) {
         super({

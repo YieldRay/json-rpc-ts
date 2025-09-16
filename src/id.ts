@@ -14,8 +14,8 @@ export function* selfAddIdGenerator(): Generator<number, void, unknown> {
 }
 
 /**
- * This can be but not mean to javascript Generator
- * Just means a source of ID
+ * This does not necessarily refer to a JavaScript Generator;
+ * it simply represents any source of IDs.
  */
 export type IDGenerator = Iterator<JSONRPCID> | (() => JSONRPCID)
 

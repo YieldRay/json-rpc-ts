@@ -43,7 +43,7 @@ Deno.writeTextFileSync('./package.json', JSON.stringify(packageJson, null, 4))
 console.log('New package.json created.')
 console.log(packageJson)
 
-const builderName = 'unbuild@3.5.0'
+const builderName = 'unbuild@3.6.1'
 console.log(`Building package using ${builderName}...`)
 new Deno.Command('npx', {
     args: ['-y', builderName],
